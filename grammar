@@ -1,0 +1,17 @@
+document : header text
+
+header : '___header___' statement_list
+statement_list : statement*
+statement : empty | variable ':' assignment ';'
+assignment : [language] (file_assignment | definition | translation)
+
+file_assignment : 'file' path
+file_content : assignment statement_list
+
+definition : ['mark :' (1|2)] shortname ['(' longname ')']
+translation : value
+
+placeholder : '{}'
+echap_char : '\'
+
+text : '___text___' content
