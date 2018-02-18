@@ -2,16 +2,26 @@ document : header text
 
 header : '___header___' statement_list
 statement_list : statement*
-statement : empty | variable ':' assignment ';'
+statement : empty | constant ':' assignment EOL
 assignment : [language] (file_assignment | definition | translation)
 
-file_assignment : 'file' path
-file_content : assignment statement_list
+language : 'lang' value
 
-definition : ['mark :' (1|2)] shortname ['(' longname ')']
-translation : value
+file_assignment : 'file' value
+
+definition : ['mark' value] value
+translation : ['mark' value] value
+value : '"' VALUE '"' 
+
+definition_value : (shortname ['(' longname ')'])+
+file_value : assignment statement_list
+mark_value : [0-9]+
 
 placeholder : '{}'
 echap_char : '\'
+
+end_of_line : 'EOL'
+end_of_file : 'EOF'
+comment : // end_of_line
 
 text : '___text___' content
