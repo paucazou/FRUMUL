@@ -2,15 +2,14 @@ document : header text
 
 header : '___header___' statement_list
 statement_list : statement*
-statement : empty | constant ':' assignment EOL
-assignment : [language] (file_assignment | definition | translation)
+statement : empty | constant ':' assignment EOL # changer : toutes les constantes déclarées doivent être dans une hiérarchie de statement
+assignment : [language] definition
+definition : (file_assignment | [mark] value [statement_list]) (EOL|EOL)
 
 language : 'lang' value
-
+mark : 'mark' value
 file_assignment : 'file' value
 
-definition : ['mark' value] value
-translation : ['mark' value] value
 value : '"' VALUE '"' 
 
 definition_value : (shortname ['(' longname ')'])+
