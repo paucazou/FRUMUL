@@ -70,6 +70,7 @@ class Lexer:
 
 
         self.textStream = self.tokensHeader[-1].value
+        self.tokensHeader.append(Token(EOF,EOF))
 
         return self.tokensHeader
 
