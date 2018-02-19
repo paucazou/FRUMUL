@@ -24,19 +24,21 @@ header_regex = collections.OrderedDict([
     (ID,re.compile(r'.+(?=:)')),
         ])
 
-Token = collections.namedtuple('Token',('type','value','line','column'))
+Token = collections.namedtuple('Token',('type','value','path','line','column'))
 
 class Lexer:
     """Split stream into a list of tokens"""
 
-    def __init__(self,stream: str) -> list:
+    def __init__(self,stream: str,path: str) -> list:
         """Set the lexer and return the list of tokens"""
         self.stream = stream
+        self.path = path
         self.tokenizeHeader()
     
     def _error(self,word: str,line: int,column: int):
         """Raises error for invalid word"""
-        raise NameError("Invalid token: {}.\nLine: {}\nColumn: {}".format(word,line,column))
+        raise NameError("Invalid token: {}.\nFile: {}\nLine: {}\nColumn: {}".format(
+            word,self.path,line,column))
 
     def _skip_whitespace(self):
         """Ignore whitespace, except EOL"""
@@ -59,7 +61,7 @@ class Lexer:
                 self._error(stream[self._pos:].split('\n')[0],line,self._pos + 1 - start_line)
 
             column = match.start(0) + 1 - start_line 
-            token = Token(type,match.group(0),line, column)
+            token = Token(type,match.group(0),self.path,line, column)
             if token.type == 'COMMENT':
                 token = Token(EOL,'\n')
             elif token.type == 'EOL':
