@@ -2,25 +2,27 @@ document : header [text]
 
 header : '___header___' statement_list
 statement_list : empty | statement*
-statement : constant ':' assignment EOL 
+statement : constant ':' assignment 
 assignment : [language] definition
-definition : (file_assignment | [mark] value [statement_list] EOL) 
+definition : (file_assignment | [mark] value (EOL | ellp statement_list elrp) 
 
 language : 'lang' value
 mark : 'mark' value
-file_assignment : 'file' value EOF
+file_assignment : 'file' value EOL
 
 value : '"' VALUE '"' 
+ellp : EOL '('
+elrp : ')' EOL
 
 definition_value : (shortname ['(' longname ')'])+
-file_value : assignment statement_list
+file_value : assignment statement_list EOF
 mark_value : [0-9]+
 
 placeholder : '{}'
 echap_char : '\'
-
 end_of_line : 'EOL'
 end_of_file : 'EOF'
+
 comment : // end_of_line
 
 text : '___text___' content
