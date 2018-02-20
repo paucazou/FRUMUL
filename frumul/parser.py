@@ -4,8 +4,9 @@
 """This module manages the parser part of the interpreter"""
 
 import collections
-import keywords
 import lexer
+
+from keywords import *
 
 # AST nodes
 
@@ -24,17 +25,16 @@ class Parser:
     def __init__(self,tokens: list):
         """Inits the instance"""
         self.tokens = tokens
-        self._pos = -1
-        self.parse()
 
     def _error(self):
         """Raises error"""
-        raise ValueError('Invalid syntax. Line: {}\nColumn: {}'.format(
-            self._current_token.line,self._current_token.column)) # TODO add the word itself
+        raise ValueError('Invalid syntax.\nFile: {}\nLine: {}\nColumn: {}'.format(
+            self._current_token.path,self._current_token.line,self._current_token.column)) # TODO add the word itself
 
     def _eat(self,type):
         """Compare type with current token type"""
         if self._current_token.type == type:
+            print(self._current_token)
             self._advance()
         else:
             self._error()
@@ -54,8 +54,10 @@ class Parser:
 
     def parse(self):
         """Parse the tokens"""
+        self._pos = -1
         self._advance()
         node = self._document()
+        self._pos = -1
         return node
 
     def _document(self):
@@ -92,7 +94,6 @@ class Parser:
         self._eat(ID)
         self._eat(ASSIGN)
         assignment = self._assignment()
-        self._eat(EOL)
         return Statement(constant,assignment)
 
     def _assignment(self):
@@ -119,8 +120,13 @@ class Parser:
             mark = self._mark()
             value = self._current_token
             self._eat(VALUE)
-            statement_list = self._statement_list()
-            self._eat(EOL)
+            if self._current_token.type == EOL:
+                self._eat(EOL)
+                statement_list = tuple()
+            else:
+                self._eat(ELLP)
+                statement_list = self._statement_list() 
+                self._eat(ELRP)
             result = Definition(mark,value,statement_list)
 
         return result
@@ -130,22 +136,26 @@ class Parser:
         self._eat(FILE)
         path = self._current_token # there will be probably a problem here -> use normpath or something like that
         self._eat(VALUE)
-        self._eat(EOF)
+        self._eat(EOL)
 
-        with open(path) as f:
+        with open(path.value) as f:
             headerfile = f.read()
 
         tokens = lexer.Lexer(headerfile,path).tokensHeader
         parser = Parser(tokens)
         parser._advance()
-        AST = parser._definition()
+        AST = parser._assignment()
+        self._eat(EOF)
         return AST
 
     def _mark(self):
         """'mark' value"""
-        self._eat(MARK)
-        result = self._current_token
-        self._eat(VALUE)
+        if self._current_token.type != MARK:
+            result = NoOp()
+        else:
+            self._eat(MARK)
+            result = self._current_token
+            self._eat(VALUE)
         return result
 
 
