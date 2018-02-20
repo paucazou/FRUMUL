@@ -4,5 +4,5 @@ lang "json" "o(object) a(array) p(pair) t(true) f(false) n(null)"
  pair : mark "3" "\"{}\": {}"
  true : "true"
  false : "false"
- null : "null") //pretty useless, no ? Just an example.
+ null : "null") //*pretty useless, no ? Just an example.*//
 

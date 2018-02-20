@@ -14,9 +14,9 @@ file_assignment ::= 'file' value EOL
 value ::= '"' VALUE '"'
 ELLP ::= EOL '('
 ELRP ::= ')' EOL
-EOL ::= comment? 'end of line'
-EOF ::= comment? 'end of file'
-comment ::= '//' 'any character except end of line'* /* changer le système de commentaires, qui interdit de reprendre d'autres lignes. -> si le commentaire est au début, ne pas rajouter de \n ? sinon oui ?
+EOL ::=  'end of line'
+EOF ::= 'end of file'
+comment ::= '//*' 'any character'* '*//' /* changer le système de commentaires, qui interdit de reprendre d'autres lignes. -> si le commentaire est au début, ne pas rajouter de \n ? sinon oui ?
 
 definition_value ::= (SHORTNAME ('(' LONGNAME ')')?)+
 file_value ::= assignment statement_list EOF
