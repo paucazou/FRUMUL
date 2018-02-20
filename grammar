@@ -1,6 +1,6 @@
 document ::= header fulltext?
 
-header ::= '___header___' statement_list
+header ::= EOL* '___header___' EOL* statement_list
 statement_list ::= empty | statement*
 statement ::= constant ':' assignment
 assignment ::= language? definition
@@ -16,7 +16,7 @@ ELLP ::= EOL '('
 ELRP ::= ')' EOL
 EOL ::= comment? 'end of line'
 EOF ::= comment? 'end of file'
-comment ::= '//' 'any character except end of line'*
+comment ::= '//' 'any character except end of line'* /* changer le système de commentaires, qui interdit de reprendre d'autres lignes. -> si le commentaire est au début, ne pas rajouter de \n ? sinon oui ?
 
 definition_value ::= (SHORTNAME ('(' LONGNAME ')')?)+
 file_value ::= assignment statement_list EOF
