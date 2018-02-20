@@ -12,16 +12,18 @@ from keywords import *
 header_regex = collections.OrderedDict([
     (HEADER,re.compile('___header___')),
     (FULLTEXT,re.compile('___text___.*$',re.DOTALL)), 
-    (EOL,re.compile(r'\n')),
     (ASSIGN,re.compile(r':')),
-    (LPAREN,re.compile(r'\(')),
-    (RPAREN,re.compile(r'\)')),
-    (MARKNB,re.compile(r'mark')),
+    (ELRP,re.compile(r'\n\(')),
+    (ELLP,re.compile(r'\)\n')),
+    (EOL,re.compile(r'\n')),
+    #(LPAREN,re.compile(r'\(')),
+    #(RPAREN,re.compile(r'\)')),
+    (MARK,re.compile(r'mark')),
     (FILE,re.compile(r'file')),
     (LANG,re.compile(r'lang')),
     ('COMMENT',re.compile("//.*\n")),
     (VALUE,re.compile(r'"(\\"|[^"])*"')),
-    (ID,re.compile(r'.+(?=:)')),
+    (ID,re.compile(r'[^ ]+(?= *:)')),
         ])
 
 Token = collections.namedtuple('Token',('type','value','path','line','column'))
@@ -58,13 +60,13 @@ class Lexer:
                 if match:
                     break
             else:
-                self._error(stream[self._pos:].split('\n')[0],line,self._pos + 1 - start_line)
+                self._error(self.stream[self._pos:].split('\n')[0],line,self._pos + 1 - start_line)
 
             column = match.start(0) + 1 - start_line 
             token = Token(type,match.group(0),self.path,line, column)
             if token.type == 'COMMENT':
-                token = Token(EOL,'\n')
-            elif token.type == 'EOL':
+                token = Token(EOL,'\n',self.path,line,column)
+            elif '\n' in token.value:
                 line += 1
                 start_line = match.end(0)
             self.tokensHeader.append(token)
@@ -72,7 +74,7 @@ class Lexer:
 
 
         self.textStream = self.tokensHeader[-1].value
-        self.tokensHeader.append(Token(EOF,EOF))
+        self.tokensHeader.append(Token(EOF,EOF,self.path,line,column))
 
         return self.tokensHeader
 
