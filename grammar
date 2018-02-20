@@ -1,28 +1,34 @@
-document : header [text]
+document ::= header fulltext?
 
-header : '___header___' statement_list
-statement_list : empty | statement*
-statement : constant ':' assignment 
-assignment : [language] definition
-definition : (file_assignment | [mark] value (EOL | ellp statement_list elrp) 
+header ::= '___header___' statement_list
+statement_list ::= empty | statement*
+statement ::= constant ':' assignment
+assignment ::= language? definition
+definition ::= file_assignment | mark? value (EOL | ELLP statement_list ELRP)
 
-language : 'lang' value
-mark : 'mark' value
-file_assignment : 'file' value EOL
+language ::= 'lang' value
+mark ::= 'mark' value
+file_assignment ::= 'file' value EOL
 
-value : '"' VALUE '"' 
-ellp : EOL '('
-elrp : ')' EOL
 
-definition_value : (shortname ['(' longname ')'])+
-file_value : assignment statement_list EOF
-mark_value : [0-9]+
+value ::= '"' VALUE '"'
+ELLP ::= EOL '('
+ELRP ::= ')' EOL
+EOL ::= comment? 'end of line'
+EOF ::= comment? 'end of file'
+comment ::= '//' 'any character except end of line'*
 
-placeholder : '{}'
-echap_char : '\'
-end_of_line : 'EOL'
-end_of_file : 'EOF'
+definition_value ::= (SHORTNAME ('(' LONGNAME ')')?)+
+file_value ::= assignment statement_list EOF
+mark_value ::= [0-9]+
 
-comment : // end_of_line
+placeholder ::= '{}'
+escape ::= '\'
+end_of_file ::= 'EOF'
+end_of_line ::= 'EOL'
 
-text : '___text___' content
+fulltext ::= '___text___' text
+text ::= (sentences|expandable)*
+sentences ::= 'any character'*
+expandable ::= CONSTANT (WORD SPACE| text CLOSING_TAG?)
+
