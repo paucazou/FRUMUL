@@ -2,9 +2,9 @@ document ::= header fulltext?
 
 header ::= EOL* '___header___' EOL* statement_list
 statement_list ::= empty | statement*
-statement ::= constant ':' assignment
-assignment ::= language? definition
-definition ::= file_assignment | mark? value (EOL | ELLP statement_list ELRP)
+statement ::= constant ':' options definition
+definition ::= file_assignment | value (EOL | ELLP statement_list ELRP)
+options ::= ( language mark? | mark language? )?
 
 language ::= 'lang' value
 mark ::= 'mark' value
@@ -16,7 +16,7 @@ ELLP ::= EOL '('
 ELRP ::= ')' EOL
 EOL ::=  'end of line'
 EOF ::= 'end of file'
-comment ::= '//*' 'any character'* '*//' /* changer le système de commentaires, qui interdit de reprendre d'autres lignes. -> si le commentaire est au début, ne pas rajouter de \n ? sinon oui ?
+comment ::= '//*' 'any character'* '*//' 
 
 definition_value ::= (SHORTNAME ('(' LONGNAME ')')?)+
 file_value ::= assignment statement_list EOF
