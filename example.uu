@@ -1,0 +1,9 @@
+___header___
+,, : lang "html" "t(title)ba"
+(t : "12345"
+b:file "./frumul/headers/json.h"
+a : "<a href=\"{}\">{}</a>"
+)
+___text___
+Je suis arrivé à l'aéroport.
+J'ai mangé des frites.

@@ -4,19 +4,19 @@
 """This module manages the parser part of the interpreter"""
 
 import collections
-import lexer
+from . import lexer
 
-from keywords import *
+from .keywords import *
 
 # AST nodes
 
 Document = collections.namedtuple('Document',('header','fulltext'))
 FullText = collections.namedtuple('FullText',('fulltext',))
 Header = collections.namedtuple('Header',('statement_list'))
-Statement = collections.namedtuple('Statement',('constant','assignment'))
+Statement = collections.namedtuple('Statement',('constant','options','definition'))
 Constant = collections.namedtuple('Constant',('id')) # USELESS ?
-Assignment = collections.namedtuple('Assignment',('lang','definition'))
-Definition = collections.namedtuple('Definition',('mark','value','statement_list'))
+Options = collections.namedtuple('Options',('lang','mark'))
+Definition = collections.namedtuple('Definition',('value','statement_list'))
 class NoOp: pass
 # parser
 
@@ -26,23 +26,19 @@ class Parser:
         """Inits the instance"""
         self.tokens = tokens
 
-    def _error(self):
+    def _error(self,type):
         """Raises error"""
+        raise ValueError('Invalid syntax. Token: {}\nType waited: {}'.format(self._current_token,type))
         raise ValueError('Invalid syntax.\nFile: {}\nLine: {}\nColumn: {}'.format(
             self._current_token.path,self._current_token.line,self._current_token.column)) # TODO add the word itself
 
     def _eat(self,type):
         """Compare type with current token type"""
         if self._current_token.type == type:
-            print(self._current_token)
+            #print(self._current_token)
             self._advance()
         else:
-            self._error()
-
-    def _eatnskip_eol(self,type):
-        """Skip EOL token if necessary"""
-        while self._current_token.type in (EOL,type):
-            self._advance()
+            self._error(type)
 
     def _advance(self):
         """Set self._current_token"""
@@ -78,8 +74,8 @@ class Parser:
 
     def _header(self):
         """header : statement_list"""
-        self._eatnskip_eol(HEADER)
-        return self._statement_list()
+        self._eat(HEADER)
+        return Header(self._statement_list())
 
     def _statement_list(self):
         """statement_list : empty | statement*"""
@@ -89,18 +85,25 @@ class Parser:
         return tuple(statement_list)
 
     def _statement(self):
-        """statement : constant ':' assignment EOL"""
+        """statement : constant ':' definition"""
         constant = self._current_token
         self._eat(ID)
         self._eat(ASSIGN)
-        assignment = self._assignment()
-        return Statement(constant,assignment)
+        options, definition = self._definition()
+        return Statement(constant,options,definition)
 
-    def _assignment(self):
-        """assignment : [language] definition"""
-        lang = self._language()
-        definition = self._definition()
-        return Assignment(lang,definition)
+    def _options(self):
+        """options ::= ( language mark? | mark language? )?"""
+        if self._current_token.type == LANG:
+            lang = self._language()
+            mark = self._mark()
+        elif self._current_token.type == MARK:
+            mark = self._mark()
+            lang = self._language()
+        else:
+            lang = mark = None
+        return Options(lang,mark)
+
 
     def _language(self):
         """'lang' value"""
@@ -109,25 +112,24 @@ class Parser:
             result = self._current_token
             self._eat(VALUE)
         else:
-            result = NoOp()
+            result = None
         return result
 
     def _definition(self):
-        """(file_assignment | [mark] value [statement_list] EOL)"""
+        """options (file_assignment | value [LPAREN statement_list RPAREN] )"""
         if self._current_token.type == FILE:
             result = self._file_assignment()
         else:
-            mark = self._mark()
+            options = self._options()
             value = self._current_token
             self._eat(VALUE)
-            if self._current_token.type == EOL:
-                self._eat(EOL)
+            if self._current_token.type != LPAREN:
                 statement_list = tuple()
             else:
-                self._eat(ELLP)
+                self._eat(LPAREN)
                 statement_list = self._statement_list() 
-                self._eat(ELRP)
-            result = Definition(mark,value,statement_list)
+                self._eat(RPAREN)
+            result = options, Definition(value,statement_list)
 
         return result
 
@@ -136,22 +138,22 @@ class Parser:
         self._eat(FILE)
         path = self._current_token # there will be probably a problem here -> use normpath or something like that
         self._eat(VALUE)
-        self._eat(EOL)
 
         with open(path.value) as f:
             headerfile = f.read()
 
-        tokens = lexer.Lexer(headerfile,path).tokensHeader
+        tokens = lexer.Lexer(headerfile,path.value).tokensHeader
         parser = Parser(tokens)
+        parser._pos = -1
         parser._advance()
-        AST = parser._assignment()
-        self._eat(EOF)
-        return AST
+        definition = parser._definition()
+        parser._eat(EOF)
+        return definition
 
     def _mark(self):
         """'mark' value"""
         if self._current_token.type != MARK:
-            result = NoOp()
+            result = None
         else:
             self._eat(MARK)
             result = self._current_token

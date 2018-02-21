@@ -1,20 +1,19 @@
 document ::= header fulltext?
 
-header ::= EOL* '___header___' EOL* statement_list
+header ::= '___header___' statement_list
 statement_list ::= empty | statement*
-statement ::= constant ':' options definition
-definition ::= file_assignment | value (EOL | ELLP statement_list ELRP)
+statement ::= constant ':' definition
+definition ::= options (file_assignment | value (LPAREN statement_list RPAREN)?)
 options ::= ( language mark? | mark language? )?
 
 language ::= 'lang' value
 mark ::= 'mark' value
-file_assignment ::= 'file' value EOL
+file_assignment ::= 'file' value 
 
 
 value ::= '"' VALUE '"'
-ELLP ::= EOL '('
-ELRP ::= ')' EOL
-EOL ::=  'end of line'
+LPAREN ::= '('
+RPAREN ::= ')'
 EOF ::= 'end of file'
 comment ::= '//*' 'any character'* '*//' 
 

@@ -6,25 +6,24 @@ It splits the string into tokens"""
 
 import collections
 import re
-from keywords import *
+from .keywords import *
 
 
 header_regex = collections.OrderedDict([
+    ('WHITESPACE',re.compile(r'\s')),
     (HEADER,re.compile('___header___',re.IGNORECASE)),
     (FULLTEXT,re.compile('___text___.*$',re.DOTALL+re.IGNORECASE)), 
     (ASSIGN,re.compile(r':')),
-    (ELLP,re.compile(r'\n\(')),
-    (ELRP,re.compile(r'\)\n')),
-    (EOL,re.compile(r'\n')),
-    #(LPAREN,re.compile(r'\(')),
-    #(RPAREN,re.compile(r'\)')),
     (MARK,re.compile(r'mark',re.IGNORECASE)),
     (FILE,re.compile(r'file',re.IGNORECASE)),
     (LANG,re.compile(r'lang',re.IGNORECASE)),
     ('COMMENT',re.compile(r'//\*.*?\*//',re.DOTALL)),
+    (LPAREN,re.compile(r'\(')), # to use a parenthesis as an ID ? Maybe an escape sign before ?
+    (RPAREN,re.compile(r'\)')),
     (VALUE,re.compile(r'"(\\"|[^"])*"')),
     (ID,re.compile(r'[^ ]+(?= *:)')), # replace & TEST [^ ] by \S (not \s)
         ])
+value_content = re.compile(r'(?<=").*(?=")')
 
 Token = collections.namedtuple('Token',('type','value','path','line','column'))
 
@@ -42,9 +41,9 @@ class Lexer:
         raise NameError("Invalid token: {}.\nFile: {}\nLine: {}\nColumn: {}".format(
             word,self.path,line,column))
 
-    def _skip_whitespace(self):
-        """Ignore whitespace, except EOL"""
-        while self._pos < len(self.stream) and self.stream[self._pos].isspace() and self.stream[self._pos] != '\n':
+    def _skip_whitespace(self): # DEPRECATED
+        """Ignore whitespace"""
+        while self._pos < len(self.stream) and self.stream[self._pos].isspace():
             self._pos += 1
 
     def tokenizeHeader(self) -> list:
@@ -54,7 +53,7 @@ class Lexer:
         line = 1 
         self.tokensHeader = []
         while self._pos < len(self.stream): 
-            self._skip_whitespace()
+            #self._skip_whitespace()
             for type,reg in header_regex.items():
                 match = reg.match(self.stream,self._pos)
                 if match:
@@ -63,11 +62,15 @@ class Lexer:
                 self._error(self.stream[self._pos:].split('\n')[0],line,self._pos + 1 - start_line)
 
             column = match.start(0) + 1 - start_line 
-            token = Token(type,match.group(0),self.path,line, column)
+            if type == VALUE:
+                value = value_content.search(match.group(0)).group(0)
+            else:
+                value = match.group(0)
+            token = Token(type,value,self.path,line, column)
             if '\n' in token.value:
                 line += token.value.count('\n') 
                 start_line = match.end(0)
-            if token.type != 'COMMENT':
+            if token.type not in ('COMMENT','WHITESPACE'):
                 self.tokensHeader.append(token)
             self._pos = match.end(0)
 
