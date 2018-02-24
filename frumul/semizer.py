@@ -36,7 +36,7 @@ class Semizer(walker.NodeVisitor):
         if children:
             children.parent = constant
             if lang:
-                children.updateValues(lang) # que fait-on si d'autres attributs sont déclarés plus tard sans lang ? -> erreur ?
+                children.updateValues(lang) 
             constant.children = children
         elif value:
             constant.setValue(value,lang)
@@ -58,7 +58,7 @@ class Semizer(walker.NodeVisitor):
             children = symbols.ChildrenSymbols()
             for stmt in node.statement_list:
                 children.declare(node.value)
-                children.updateChild(self.visit(stmt)) # problème : les langues ne seront pas forcément définies à ce stade... puisqu'il n'y a pas de parent !
+                children.updateChild(self.visit(stmt)) 
 
         return value, children 
 

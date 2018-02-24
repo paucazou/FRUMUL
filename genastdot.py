@@ -107,8 +107,24 @@ class ASTVisualizer(frumul.walker.NodeVisitor):
     def visit_Token(self,node):
         self.addNode(node.value,node)
 
+    def visit_Text(self,node):
+        self.addNode('Text',node)
+        for child in node.children:
+            child = self.visit(child)
+            self.visitChild(node,child)
+
+    def visit_Sentence(self,node):
+        self.addNode(node.token.value,node)
+    
+    def visit_Tag(self,node):
+        self.addNode(node.symbol,node)
+        if node.text.children:
+            for child in node.text.children:
+                child = self.visit(child)
+                self.visitChild(node,child)
+
     def gendot(self):
-        tree = self.parser.parse()
+        tree = self.parser()
         self.visit(tree)
         return ''.join(self.dot_header + self.dot_body + self.dot_footer)
 
@@ -119,16 +135,24 @@ def main():
     )
     argparser.add_argument(
         'fname',
-        help='Pascal source file'
+        help='Source file'
     )
+    argparser.add_argument('--text',help="Return Text AST, not Header",action='store_true')
     args = argparser.parse_args()
     with open(args.fname) as fname:
         text = fname.read()
 
-    parser = frumul.parser.Parser(frumul.lexer.Lexer(text,args.fname).tokensHeader)
+    if args.text:
+        tokens = frumul.lexer.Lexer(text,args.fname)()
+        AST = frumul.parser.Parser(tokens)()
+        sem = frumul.semizer.Semizer(AST)()
+        ttokens = frumul.lexer.TextLexer(AST,sem)()
+        parser = frumul.parser.TextParser(ttokens,sem)
+    else:
+        parser = frumul.parser.Parser(frumul.lexer.Lexer(text,args.fname)())
     viz = ASTVisualizer(parser)
     content = viz.gendot()
-    print(content)
+    print(content) # there can be a problem if label contain " inside
 
 
 if __name__ == '__main__':

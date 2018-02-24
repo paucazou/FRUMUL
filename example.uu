@@ -1,8 +1,8 @@
 ___header___
 ,, : "t(title)ja"
-(t : lang "number" "12345"
+(t : lang "number" mark "1" "12345"
 j:file "./frumul/headers/json.h"
-a : lang "html" "<a href=\"{}\">{}</a>"
+a : lang "html" mark "3" "<a href=\"{}\">{}</a>"
 )
 ___text___
 ,,a theochrone.fr,, theochrone,, ,best website ever.

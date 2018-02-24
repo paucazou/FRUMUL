@@ -27,7 +27,8 @@ end_of_file ::= 'EOF'
 end_of_line ::= 'EOL'
 
 fulltext ::= '___text___' text
-text ::= (sentences|expandable)*
-sentences ::= 'any character'*
-expandable ::= CONSTANT SPACE (WORD SPACE| (text CLOSING_TAG)+)
+text ::= (sentence|expandable)*
+sentence ::= 'any character'*
+expandable ::= CONSTANT SPACE (text CLOSING_TAG)+
+/* constant ::= long names can be separated by a dot */
 

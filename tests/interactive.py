@@ -33,3 +33,10 @@ def text_lexer(content,filename=afile):
     sem = semizer(content,filename)
     tl = frumul.lexer.TextLexer(ast,sem)
     return tl()
+
+def text_parser(content,filename=afile):
+    """return the result of parser.TextParser"""
+    sem = semizer(content,filename)
+    tokens = text_lexer(content,filename)
+    tp = frumul.parser.TextParser(tokens,sem)
+    return tp()

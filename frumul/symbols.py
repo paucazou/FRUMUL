@@ -2,6 +2,7 @@
 # -*-coding:Utf-8 -*
 #Deus, in adjutorium meum intende
 """Symbols declared in the header files"""
+import re
 from . import lexer
 # TODO try to save the tokens, in order to know file, columns, etc.
 
@@ -88,6 +89,19 @@ class Symbol:
         children = len(getattr(self,'children',''))
         return "{}({}, value={}, tagNb={}, children={})".format(type(self).__name__,name,value,tag,children)
 
+    def _get_tag(self) -> int:
+        """Return number of tags requested by this symbol
+        if self._tag_nb is set, return it
+        else, ask it to parent and set self._tag_nb"""
+        if not self._tag_nb:
+            if self.parent:
+                self._tag_nb = self.parent.tag
+            else:
+                raise ValueError("No parent have been set for this Symbol, or no tag number has been declared: {}".format(self))
+        return self._tag_nb
+
+    tag = property(_get_tag)
+
     def setValue(self,value: str,lang=None):
         """set a value for specific lang"""
         if value == getattr(self,'_temp_value',False):
@@ -124,7 +138,7 @@ class ChildrenSymbols:
     def __init__(self,parent=None):
         """init"""
         self._children = {}
-        self.parent = parent
+        self._parent = parent
 
     def __repr__(self):
         """Representation of the instance"""
@@ -139,6 +153,10 @@ class ChildrenSymbols:
         """Number of children"""
         return len(self._children)
 
+    def __bool__(self):
+        """Return True if it has children"""
+        return bool(self._children)
+
     def __contains__(self,entry):
         """entry can be a Name object or a str.
         if a str, it must be a short or a long name"""
@@ -152,6 +170,20 @@ class ChildrenSymbols:
                 return symbol
         else:
             raise KeyError("No symbol with requested tag: {}".format(entry))
+
+    def _set_parent(self,parent):
+        """Set parent"""
+        if self._parent:
+            raise NameError("A parent: {}  has yet been declared for these children: {}".format(parent,self))
+        self._parent = parent
+        for child in self._children.values():
+            child.parent = parent
+
+    def _get_parent(self,parent):
+        """Get parent"""
+        return self._parent
+    
+    parent = property(_get_parent,_set_parent)
 
     def updateChild(self,child,declaration=True):
         """If child doesn't exist yet, add it.
@@ -208,3 +240,43 @@ class ChildrenSymbols:
 
                 yield Name(short=short,long=long)
             i+=1
+
+    def giveChild(self,value: str) -> Symbol:
+        """Look in self._children to find
+        the child.""" # TODO verify that string does not contain spaces or is empty 
+        child = None
+        if value[0] == '.': # case of value starting by a dot (to separate long names)
+            if '.' in self:
+                child = self.__getitem__('.')
+            value = value[1:]
+
+        if not child:
+            for type_name in ('long','short'):
+                result = self._match_with(value,type_name)
+                if result:
+                    child,value = result
+                    break
+
+
+        if not result or value and not child.hasChildren():
+            raise ValueError("'{}' canno't be interpreted".format(value))
+        if value : # if value is not entirely consumed
+            child = child.children.giveChild(value)
+
+        return child
+
+    def _match_with(self,value: str,name_type: str):
+        """Method used by giveChild to see
+        if the first part of value can be found
+        in instance
+        return tuple(Symbol,str) or None"""
+        names = [ getattr(name,name_type) for name in self._children if getattr(name,name_type) ]
+        for name in names:
+            match = re.match(name,value)
+            if match:
+                child = self.__getitem__(match.group(0))
+                value = value[match.end(0):]
+                return child, value
+
+
+

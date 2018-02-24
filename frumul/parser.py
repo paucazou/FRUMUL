@@ -17,7 +17,7 @@ Statement = collections.namedtuple('Statement',('constant','options','definition
 #Constant = collections.namedtuple('Constant',('id')) # USELESS ?
 Options = collections.namedtuple('Options',('lang','mark'))
 Definition = collections.namedtuple('Definition',('value','statement_list'))
-class NoOp: pass
+#class NoOp: pass
 # parser
 
 class Parser:
@@ -160,6 +160,95 @@ class Parser:
             self._eat(VALUE)
         return result
 
+
+
+
+# text parser
+
+Text = collections.namedtuple('Text',('children',))
+Sentence = collections.namedtuple('Sentence',('token',))
+Tag = collections.namedtuple('Tag',('symbol','text'))
+
+eof_token = lexer.Token(EOF,EOF,'',-1,-1)
+
+class TextParser(Parser):
+    """Parses the text"""
+
+    def __init__(self,tokens,constants):
+        """tokens = list of lexer.Token
+        constants = ChildrenSymbol"""
+        self.tokens = tokens
+        self.constants = constants
+
+    def __call__(self):
+        """return an AST"""
+        self._pos = -1
+        self._advance()
+        node = self._text()
+        self._eat(EOF)
+        self._pos = -1
+        return node
+
+    def _text(self,CTAG=eof_token,nb=0):
+        """Manages text
+        CTAG can be EOF or another closing tag"""
+        children = []
+        while self._current_token.type != CTAG.type or nb > 0: # there's a break condition. Try to change that.
+
+            if self._current_token.type == SENTENCE:
+                children.append(Sentence(self._current_token))
+                self._eat(SENTENCE)
+
+            if self._current_token.type == OTAG:
+                children.append(self._otag())
+
+            if self._current_token.type == TAG and self._current_token.value == CTAG.value:
+                self._eat(TAG)
+                nb -= 1
+                last_elt_added = []
+                for i,elt in enumerate(children):
+                    if not isinstance(elt,Text):
+                        last_elt_added.append(children.pop(i))
+                children.append(Text(last_elt_added))
+                if nb <= 0:
+                    break
+            elif self._current_token.type == TAG: # it is necessary to keep the elif, not if, because we can be waiting for the same type of tag, but not the same value
+                children.append(self._tag())
+
+        return Text(children)
+
+    def _otag(self):
+        """Manages opening tag"""
+        otag = self._current_token
+        self._eat(OTAG)
+        children = self._current_token.value
+        self._eat(CHILDREN)
+        symbol = self.constants[otag.value].children.giveChild(children) # a recursive method which return matching child
+        tag_number = symbol.tag
+        ctag = otag._replace(type='TAG')
+
+        if tag_number > 1:
+            text = self._text(ctag,tag_number - 1)
+        else:
+            text = Text([])
+
+        node = Tag(symbol,text)
+
+        return node
+
+    def _tag(self): # à refactoriser pour mettre en commun avec _otag
+        """Manages tag alone."""
+        tag = self._current_token
+        self._eat(TAG)
+        symbol = self.constants[tag.value]
+        tag_number = symbol.tag
+        if tag_number:
+            text = self._text(tag,tag_number-1)
+        else:
+            text = Text([])
+
+        node = Tag(symbol,text)
+        return node
 
 
 
