@@ -11,10 +11,10 @@ from .keywords import *
 # AST nodes
 
 Document = collections.namedtuple('Document',('header','fulltext'))
-FullText = collections.namedtuple('FullText',('fulltext',))
+#FullText = collections.namedtuple('FullText',('fulltext',))
 Header = collections.namedtuple('Header',('statement_list'))
 Statement = collections.namedtuple('Statement',('constant','options','definition'))
-Constant = collections.namedtuple('Constant',('id')) # USELESS ?
+#Constant = collections.namedtuple('Constant',('id')) # USELESS ?
 Options = collections.namedtuple('Options',('lang','mark'))
 Definition = collections.namedtuple('Definition',('value','statement_list'))
 class NoOp: pass
@@ -48,7 +48,7 @@ class Parser:
         else:
             self._current_token = None
 
-    def parse(self):
+    def __call__(self):
         """Parse the tokens"""
         self._pos = -1
         self._advance()
@@ -66,10 +66,10 @@ class Parser:
     def _fulltext(self):
         """return fulltext"""
         if self._current_token.type == 'FULLTEXT':
-            node = FullText(self._current_token)
+            node = self._current_token
             self._eat(FULLTEXT)
         else:
-            node = NoOp()
+            node = None
         return node
 
     def _header(self):
@@ -142,7 +142,7 @@ class Parser:
         with open(path.value) as f:
             headerfile = f.read()
 
-        tokens = lexer.Lexer(headerfile,path.value).tokensHeader
+        tokens = lexer.Lexer(headerfile,path.value)()
         parser = Parser(tokens)
         parser._pos = -1
         parser._advance()

@@ -1,9 +1,9 @@
 ___header___
-,, : lang "html" "t(title)ba"
-(t : "12345"
-b:file "./frumul/headers/json.h"
-a : "<a href=\"{}\">{}</a>"
+,, : "t(title)ja"
+(t : lang "number" "12345"
+j:file "./frumul/headers/json.h"
+a : lang "html" "<a href=\"{}\">{}</a>"
 )
 ___text___
-Je suis arrivé à l'aéroport.
-J'ai mangé des frites.
+,,a theochrone.fr,, theochrone,, ,best website ever.
+,,t

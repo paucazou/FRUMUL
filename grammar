@@ -29,5 +29,5 @@ end_of_line ::= 'EOL'
 fulltext ::= '___text___' text
 text ::= (sentences|expandable)*
 sentences ::= 'any character'*
-expandable ::= CONSTANT (WORD SPACE| text CLOSING_TAG?)
+expandable ::= CONSTANT SPACE (WORD SPACE| (text CLOSING_TAG)+)
 
