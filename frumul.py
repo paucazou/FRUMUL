@@ -10,7 +10,6 @@ from frumul import lexer, parser, semizer, transpiler
 
 # env variables
 os.environ['STDLIB'] = os.path.abspath('./frumul/headers') + '/' # '/' because abspath deletes it
-print(os.environ['STDLIB'])
 
 def transpile(input,output,lang: str):
     """Transpile from input to output for requested lang"""
@@ -43,7 +42,7 @@ def newFile(output,headers):
     output.write(content)
     output.close()
     # rename file
-    if output.name[-3] != '.uu' and not os.path.isfile(output.name + '.uu'):
+    if output.name[-3:] != '.uu' and not os.path.isfile(output.name + '.uu'):
         os.rename(output.name,output.name+'.uu')
 
 
