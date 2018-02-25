@@ -1,6 +1,6 @@
 ___header___
 ,, : "t(title)ja"
-(t : lang "number" mark "1" "12345"
+(t : lang "html" mark "1" "12345"
 j:file "./frumul/headers/json.h"
 a : lang "html" mark "3" "<a href=\"{}\">{}</a>"
 )

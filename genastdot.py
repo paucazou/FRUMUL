@@ -119,7 +119,7 @@ class ASTVisualizer(frumul.walker.NodeVisitor):
     def visit_Tag(self,node):
         self.addNode(node.symbol,node)
         if node.text.children:
-            for child in node.text.children:
+            for child in node.text.children: # TODO à modifier (voir parser)
                 child = self.visit(child)
                 self.visitChild(node,child)
 

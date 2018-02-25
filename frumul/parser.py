@@ -185,15 +185,14 @@ class TextParser(Parser):
         self._pos = -1
         self._advance()
         node = self._text()
-        self._eat(EOF)
         self._pos = -1
         return node
 
-    def _text(self,CTAG=eof_token,nb=0):
+    def _text(self,CTAG=eof_token):
         """Manages text
-        CTAG can be EOF or another closing tag"""
+        CTAG (closing tag) can be EOF or another closing tag"""
         children = []
-        while self._current_token.type != CTAG.type or nb > 0: # there's a break condition. Try to change that.
+        while self._current_token.type != CTAG.type and self._current_token.value != CTAG.value: 
 
             if self._current_token.type == SENTENCE:
                 children.append(Sentence(self._current_token))
@@ -202,18 +201,10 @@ class TextParser(Parser):
             if self._current_token.type == OTAG:
                 children.append(self._otag())
 
-            if self._current_token.type == TAG and self._current_token.value == CTAG.value:
-                self._eat(TAG)
-                nb -= 1
-                last_elt_added = []
-                for i,elt in enumerate(children):
-                    if not isinstance(elt,Text):
-                        last_elt_added.append(children.pop(i))
-                children.append(Text(last_elt_added))
-                if nb <= 0:
-                    break
-            elif self._current_token.type == TAG: # it is necessary to keep the elif, not if, because we can be waiting for the same type of tag, but not the same value
+            if self._current_token.type == TAG and self._current_token.value != CTAG.value: 
                 children.append(self._tag())
+
+        self._eat(CTAG.type)
 
         return Text(children)
 
@@ -227,10 +218,10 @@ class TextParser(Parser):
         tag_number = symbol.tag
         ctag = otag._replace(type='TAG')
 
-        if tag_number > 1:
-            text = self._text(ctag,tag_number - 1)
-        else:
-            text = Text([])
+        text = []
+        while tag_number > 1:
+            text.append(self._text(ctag))
+            tag_number -= 1
 
         node = Tag(symbol,text)
 
@@ -242,10 +233,10 @@ class TextParser(Parser):
         self._eat(TAG)
         symbol = self.constants[tag.value]
         tag_number = symbol.tag
-        if tag_number:
-            text = self._text(tag,tag_number-1)
-        else:
-            text = Text([])
+        text = []
+        while tag_number > 1:
+            text.append(self._text(ctag))
+            tag_number -= 1
 
         node = Tag(symbol,text)
         return node

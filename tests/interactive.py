@@ -40,3 +40,8 @@ def text_parser(content,filename=afile):
     tokens = text_lexer(content,filename)
     tp = frumul.parser.TextParser(tokens,sem)
     return tp()
+
+def transpiler(content,lang,filename=afile):
+    """return the result of transpiler.Transpiler"""
+    ast = text_parser(content,filename)
+    return frumul.transpiler.Transpiler(ast,lang)
