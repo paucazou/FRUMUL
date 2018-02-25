@@ -104,7 +104,7 @@ class TextLexer(Lexer):
 
 
         
-    def __call__(self) -> list: # TODO: lines, columns
+    def __call__(self) -> list: 
         """set tokens and return it"""
         self._pos = 0
         self.tokens = []
@@ -114,23 +114,45 @@ class TextLexer(Lexer):
             temp_tokens = []
             type = elt.lastgroup
             
-            if elt.start(0) != self._pos:
-                temp_tokens.append( Token(SENTENCE,self.stream[self._pos:elt.start(0)],self.path,column,line) )
+            if elt.start(0) != self._pos: 
+                sentence = self.stream[self._pos:elt.start(0)]
+                temp_tokens.append( Token(SENTENCE,sentence,self.path,line,column) )
+                line, column = self._set_pos(sentence,line,column)
             if type == TAG:
                 tag,children = elt.group('tag'), elt.group('children')
                 if children:
-                    temp_tokens.append( Token(OTAG,tag,self.path,column,line) )
-                    temp_tokens.append( Token(CHILDREN,children,self.path,column,line) )
+                    temp_tokens.append( Token(OTAG,tag,self.path,line,column) )
+                    column += len(tag) 
+                    temp_tokens.append( Token(CHILDREN,children,self.path,line,column) )
+                    column += len(children) + 1 # a tag is followed by a whitespace which is not taken in the match
                 else:
-                    temp_tokens.append( Token(TAG,tag,self.path,column,line) )
+                    temp_tokens.append( Token(TAG,tag,self.path,line,column) )
+                    column += len(tag)
                 self.tokens.extend(temp_tokens)
             self._pos = elt.end(0)
         else:
             if self._pos + 1 < len(self.stream):
-                self.tokens.append( Token(SENTENCE,self.stream[self._pos:],self.path,column,line) )
-            self.tokens.append( Token(EOF,EOF,self.path,column,line) )
+                sentence = self.stream[self._pos:]
+                self.tokens.append( Token(SENTENCE,sentence,self.path,line,column) )
+                line,column = self._set_pos(sentence,line,column)
+            self.tokens.append( Token(EOF,EOF,self.path,line,column) )
 
         return self.tokens
+
+    def _set_pos(self,sentence: str,line: int,column: int) -> tuple:
+        """Set line and column.
+        Analyzes number of newlines in sentence"""
+        nline = sentence.count('\n')
+        length = len(sentence)
+        if nline:
+            line += nline
+            last_member = sentence.partition('\n')[-1]
+            length = len(last_member)
+            column = length if length > 0 else 1
+        else:
+            column += length
+        return line, column
+
 
 
 class DefinitionLexer(Lexer):

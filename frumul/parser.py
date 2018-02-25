@@ -4,6 +4,7 @@
 """This module manages the parser part of the interpreter"""
 
 import collections
+import os
 from . import lexer
 
 from .keywords import *
@@ -136,13 +137,20 @@ class Parser:
     def _file_assignment(self):
         """file_assignment : 'file' value EOF"""
         self._eat(FILE)
-        path = self._current_token # there will be probably a problem here -> use normpath or something like that
+        file_token = self._current_token # there will be probably a problem here -> use normpath or something like that
         self._eat(VALUE)
 
-        with open(path.value) as f:
+        dirname = os.path.dirname(file_token.path) + '/'
+        file_path = dirname + file_path.value # absolute path
+        if not os.path.isfile(file_path): # looking for stlib
+            file_path = os.environ['STDLIB'] + file_token.value + '.h'
+            if not os.path.isfile(file_path):
+                raise ValueError("No header file found for '{}'".format(file_token.value))
+
+        with open(file_path) as f:
             headerfile = f.read()
 
-        tokens = lexer.Lexer(headerfile,path.value)()
+        tokens = lexer.Lexer(headerfile,file_path.value)()
         parser = Parser(tokens)
         parser._pos = -1
         parser._advance()

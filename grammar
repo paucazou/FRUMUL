@@ -23,8 +23,8 @@ mark_value ::= [0-9]+
 
 placeholder ::= '{}'
 escape ::= '\'
-end_of_file ::= 'EOF'
 end_of_line ::= 'EOL'
+tab ::= 'TAB'
 /* add other spaces */
 
 fulltext ::= '___text___' text

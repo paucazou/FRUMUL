@@ -29,7 +29,7 @@ class Transpiler(walker.NodeVisitor):
         AST is a Text instance
         lang defines the output language"""
         self.ast = ast
-        self.lang = lang # TODO create error if lang doesn't exist
+        self.lang = lang 
 
     def __call__(self):
         """Launches the transpilation"""
@@ -63,8 +63,7 @@ class Transpiler(walker.NodeVisitor):
         broken_sentence = ( self._transformSentence(sentence) for sentence in broken_sentence )
         string_return = next(broken_sentence)
 
-        #assert len(broken_sentence) + 1 == len(node.children) # develop !!
-        for text, sentence in zip(node.text,broken_sentence):
+        for text, sentence in zip(node.text,broken_sentence): # will fail silently if node and broken_sentence don't have same length
             string_return += self.visit(text)
             string_return += sentence
 
