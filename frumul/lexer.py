@@ -123,12 +123,12 @@ class TextLexer(Lexer):
             if type == TAG:
                 tag,children = elt.group('tag'), elt.group('children')
                 if children:
-                    temp_tokens.append( Token(OTAG,tag,self.path,line,column) )
+                    temp_tokens.append( Token(OTAG,tag,self.file,line,column) )
                     column += len(tag) 
-                    temp_tokens.append( Token(CHILDREN,children,self.path,line,column) )
+                    temp_tokens.append( Token(CHILDREN,children,self.file,line,column) )
                     column += len(children) + 1 # a tag is followed by a whitespace which is not taken in the match
                 else:
-                    temp_tokens.append( Token(TAG,tag,self.path,line,column) )
+                    temp_tokens.append( Token(TAG,tag,self.file,line,column) )
                     column += len(tag)
                 self.tokens.extend(temp_tokens)
             self._pos = elt.end(0)
@@ -160,7 +160,7 @@ class DefinitionLexer(Lexer):
 
     def __init__(self,token: Token):
         """inits the lexer"""
-        super().__init__(token.value,token.path)
+        super().__init__(token.value,token.file.path)
         self.column = token.column
         self.line = token.line
 
@@ -180,7 +180,7 @@ class DefinitionLexer(Lexer):
 
             if type != WHITESPACE:
                 value = match.group('content') if type == LONGNAME else match.group(0)
-                token = Token(type,value,self.path,self.line,self.column+pos+1)
+                token = Token(type,value,self.file,self.line,self.column+pos+1)
                 self.tokens.append(token)
 
         return self.tokens

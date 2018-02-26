@@ -41,8 +41,8 @@ class Semizer(walker.NodeVisitor):
             if lang:
                 children.updateValues(lang) 
             constant.children = children
-            if constant.children.declared_children:
-                raise ValueError("Children declared, but not defined: {}".format(constant.declared_children))
+            if constant.children.declared_children: #BUG
+                raise ValueError("Children declared, but not defined: {}".format(constant.children.declared_children))
         elif value:
             constant.setValue(value,lang)
 
@@ -64,8 +64,8 @@ class Semizer(walker.NodeVisitor):
             value = node.value.value
         else:
             children = symbols.ChildrenSymbols()
+            children.declare(node.value)
             for stmt in node.statement_list:
-                children.declare(node.value)
                 children.updateChild(self.visit(stmt)) 
 
         return value, children 

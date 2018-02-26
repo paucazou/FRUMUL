@@ -4,11 +4,13 @@
 """This module can be used to test the interpreter
 at different steps of the job"""
 
+import os
 import sys
 sys.path.append('..')
 import frumul
 
 afile = "afile.uu"
+os.environ['STDLIB'] = os.path.abspath('../frumul/headers') + '/'
 
 def lexer(content,filename=afile):
     """return the results of lexer.Lexer()"""

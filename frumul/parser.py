@@ -31,7 +31,7 @@ class Parser:
         """Raises error"""
         raise ValueError('Invalid syntax. Token: {}\nType waited: {}'.format(self._current_token,type))
         raise ValueError('Invalid syntax.\nFile: {}\nLine: {}\nColumn: {}'.format(
-            self._current_token.path,self._current_token.line,self._current_token.column)) # TODO add the word itself
+            self._current_token.file.path,self._current_token.line,self._current_token.column)) # TODO add the word itself
 
     def _eat(self,type):
         """Compare type with current token type"""
@@ -140,8 +140,8 @@ class Parser:
         file_token = self._current_token # there will be probably a problem here -> use normpath or something like that
         self._eat(VALUE)
 
-        dirname = os.path.dirname(file_token.path) + '/'
-        file_path = dirname + file_path.value # absolute path
+        dirname = os.path.dirname(file_token.file.path) + '/'
+        file_path = dirname + file_token.value # absolute path
         if not os.path.isfile(file_path): # looking for stlib
             file_path = os.environ['STDLIB'] + file_token.value + '.h'
             if not os.path.isfile(file_path):
@@ -150,7 +150,7 @@ class Parser:
         with open(file_path) as f:
             headerfile = f.read()
 
-        tokens = lexer.Lexer(headerfile,file_path.value)()
+        tokens = lexer.Lexer(headerfile,file_path)()
         parser = Parser(tokens)
         parser._pos = -1
         parser._advance()
