@@ -188,12 +188,12 @@ class ChildrenSymbols:
     def updateChild(self,child,declaration=True):
         """If child doesn't exist yet, add it.
         Else update existing child #TODO
-        if declaration==False, does not use self._declared_children""" 
+        if declaration==False, does not use self.declared_children""" 
         if declaration:
-            if child._temp_name not in self._declared_children:
+            if child._temp_name not in self.declared_children:
                 raise NameError('{} has not been declared before definition'.format(child._temp_name))
-            child.name = [name for name in self._declared_children if child._temp_name == name][0]
-            self._declared_children.remove(child.name)
+            child.name = [name for name in self.declared_children if child._temp_name == name][0]
+            self.declared_children.remove(child.name)
         else:
             child.name = Name(long=child._temp_name)
             del(child._temp_name)
@@ -211,15 +211,14 @@ class ChildrenSymbols:
 
     def declare(self,value: lexer.Token):
         """Declare children""" 
-        self._declared_children = [
+        self.declared_children = [
                 name for name in self._parse(value)
                 ]
-        for i,name in enumerate(self._declared_children):
-            double = [other for other in self._declared_children[i+1:] if name.partialEq(other)]
+        for i,name in enumerate(self.declared_children):
+            double = [other for other in self.declared_children[i+1:] if name.partialEq(other)]
             if double:
                 raise NameError("Two constants have the same name: {} - {}".format(name,double[0]))
 
-        # TODO verify that self._declared_children is empty at the end
 
     def _parse(self,value: lexer.Token):
         """Generator. Parse a string
