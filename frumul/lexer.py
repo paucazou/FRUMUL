@@ -35,7 +35,8 @@ definition_regex = collections.OrderedDict([
     (SHORTNAME,re.compile(r'\S')),
     ])
 
-Token = collections.namedtuple('Token',('type','value','path','line','column'))
+Token = collections.namedtuple('Token',('type','value','file','line','column'))
+File = collections.namedtuple('File',('path','content'))
 
 class Lexer:
     """Split stream into a list of tokens"""
@@ -44,6 +45,7 @@ class Lexer:
         """Set the lexer"""
         self.stream = stream
         self.path = path
+        self.file = File(stream,path)
     
     def _error(self,word: str,line: int,column: int):
         """Raises error for invalid word"""
@@ -54,10 +56,9 @@ class Lexer:
         """get tokens of the header.
         Set self.tokens and return it.""" #http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
         self._pos = start_line = 0
-        line = 1 
+        line = 0 
         self.tokens = []
         while self._pos < len(self.stream): 
-            #self._skip_whitespace()
             for type,reg in header_regex.items():
                 match = reg.match(self.stream,self._pos)
                 if match:
@@ -65,14 +66,14 @@ class Lexer:
             else:
                 self._error(self.stream[self._pos:].split('\n')[0],line,self._pos + 1 - start_line)
 
-            column = match.start(0) + 1 - start_line 
+            column = match.start(0) - start_line 
             if type == VALUE:
                 value = value_content.search(match.group(0)).group(0)
             elif type == FULLTEXT:
                 value = match.group(1)
             else:
                 value = match.group(0)
-            token = Token(type,value,self.path,line, column)
+            token = Token(type,value,self.file,line, column)
             if '\n' in token.value:
                 line += token.value.count('\n') 
                 start_line = match.end(0)
@@ -81,7 +82,7 @@ class Lexer:
             self._pos = match.end(0)
 
 
-        self.tokens.append(Token(EOF,EOF,self.path,line,column))
+        self.tokens.append(Token(EOF,EOF,self.file,line,column))
 
         return self.tokens
 
@@ -94,7 +95,8 @@ class TextLexer(Lexer):
         self.stream = AST.fulltext.value
         self.fulltext = AST.fulltext
         self.constants = constants
-        self.path = AST.fulltext.path
+        self.file = AST.fulltext.file
+        self.path = self.file.path
 
         tags = '|'.join([tag.name.long for tag in constants])
         regex = (
@@ -116,7 +118,7 @@ class TextLexer(Lexer):
             
             if elt.start(0) != self._pos: 
                 sentence = self.stream[self._pos:elt.start(0)]
-                temp_tokens.append( Token(SENTENCE,sentence,self.path,line,column) )
+                temp_tokens.append( Token(SENTENCE,sentence,self.file,line,column) )
                 line, column = self._set_pos(sentence,line,column)
             if type == TAG:
                 tag,children = elt.group('tag'), elt.group('children')
@@ -133,9 +135,9 @@ class TextLexer(Lexer):
         else:
             if self._pos + 1 < len(self.stream):
                 sentence = self.stream[self._pos:]
-                self.tokens.append( Token(SENTENCE,sentence,self.path,line,column) )
+                self.tokens.append( Token(SENTENCE,sentence,self.file,line,column) )
                 line,column = self._set_pos(sentence,line,column)
-            self.tokens.append( Token(EOF,EOF,self.path,line,column) )
+            self.tokens.append( Token(EOF,EOF,self.file,line,column) )
 
         return self.tokens
 
@@ -148,9 +150,7 @@ class TextLexer(Lexer):
             line += nline
             last_member = sentence.partition('\n')[-1]
             length = len(last_member)
-            column = length if length > 0 else 1
-        else:
-            column += length
+        column += length
         return line, column
 
 
