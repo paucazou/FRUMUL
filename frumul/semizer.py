@@ -26,7 +26,10 @@ class Semizer(walker.NodeVisitor):
         """Visit Document"""
         self.constants = symbols.ChildrenSymbols()
         for stmt in node.statement_list:
-            self.constants.updateChild(self.visit(stmt),declaration=False) # TODO vérifier qu'aucune valeur n'ait été donnée s'il y a des enfants.
+            self.constants.updateChild(self.visit(stmt),declaration=False) 
+        for constant in self.constants:
+            if constant.hasValue() and constant.hasChildren():
+                raise ValueError('''An Opening tag canno't have a value and a child: {}'''.format(constant)) # if a constant has both, it is impossible to parse the text without ambiguity
 
     def visit_Statement(self,node):
         """Visit Statement"""
@@ -38,6 +41,8 @@ class Semizer(walker.NodeVisitor):
             if lang:
                 children.updateValues(lang) 
             constant.children = children
+            if constant.children.declared_children:
+                raise ValueError("Children declared, but not defined: {}".format(constant.declared_children))
         elif value:
             constant.setValue(value,lang)
 
@@ -46,7 +51,10 @@ class Semizer(walker.NodeVisitor):
     def visit_Options(self,node):
         """Visit Options"""
         lang = node.lang.value if node.lang else None
-        mark = int(node.mark.value) if node.mark else None # TODO raise error if not int
+        try:
+            mark = int(node.mark.value) if node.mark else None 
+        except ValueError:
+            raise ValueError("Invalid integer: {}".format(node.mark))
         return lang, mark
 
     def visit_Definition(self,node):
