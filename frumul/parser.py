@@ -31,7 +31,7 @@ class Parser:
         """Raises error"""
         raise ValueError('Invalid syntax. Token: {}\nType waited: {}'.format(self._current_token,type))
         raise ValueError('Invalid syntax.\nFile: {}\nLine: {}\nColumn: {}'.format(
-            self._current_token.file.path,self._current_token.line,self._current_token.column)) # TODO add the word itself
+            self._current_token.file.path,self._current_token.line,self._current_token.column)) 
 
     def _eat(self,type):
         """Compare type with current token type"""

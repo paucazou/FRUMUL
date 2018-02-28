@@ -46,4 +46,4 @@ def text_parser(content,filename=afile):
 def transpiler(content,lang,filename=afile):
     """return the result of transpiler.Transpiler"""
     ast = text_parser(content,filename)
-    return frumul.transpiler.Transpiler(ast,lang)
+    return frumul.transpiler.Transpiler(ast,lang)()

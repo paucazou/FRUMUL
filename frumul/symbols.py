@@ -3,7 +3,7 @@
 #Deus, in adjutorium meum intende
 """Symbols declared in the header files"""
 import re
-from . import lexer
+from . import exception, lexer
 # TODO try to save the tokens, in order to know file, columns, etc.
 
 class Name:
@@ -43,7 +43,8 @@ class Name:
     def _set_name(self,value: str,type: str):
         """Set name"""
         attribute = "_"+type
-        if getattr(self,attribute,None) is not None:
+        attr_value = getattr(self,attribute,None)
+        if attr_value is not None and attr_value != value: # if new value is the same than the older, no error: useful for update
             raise NameError(self._error.format(type,self))
         setattr(self,attribute,value)
 
@@ -78,6 +79,7 @@ class Symbol:
         """Instanciates the object"""
         self._temp_name = kwargs.get('temp_name')# a temporary name, the ID at the left of the assign token
         self._tag_nb = kwargs.get('tag_nb')
+        self.parent = kwargs.get('parent')
 
         self._values = {} # lang:value
 
@@ -85,7 +87,7 @@ class Symbol:
         """Representation of the instance"""
         name = getattr(self,'name',getattr(self,'temp_name',''))
         value = getattr(self,'_temp_value',self._values if self._values else 'No')
-        tag = self._tag_nb if self._tag_nb else 'No' # TODO ask it to parent if value set
+        tag = self.tag if self.tag else 'No'
         children = len(getattr(self,'children',''))
         return "{}({}, value={}, tagNb={}, children={})".format(type(self).__name__,name,value,tag,children)
 
@@ -120,10 +122,14 @@ class Symbol:
                 raise ValueError("There is already a temp value: {}".format(self._temp_value))
 
     def getValue(self,lang: str) -> str:
-        """Get specific value"""
-        if lang not in self._values:
+        """Get specific value.
+        If lang unavailable, try to return the 'every' value"""
+        try:
+            return self._values.get(lang,self._value['every'])
+        except KeyError:
             raise ValueError('No value for requested lang: {}'.format(lang))
-        return self._values[lang]
+
+
 
     def hasChildren(self) -> bool:
         """Return True if object has children"""
@@ -132,6 +138,41 @@ class Symbol:
     def hasValue(self) -> bool:
         """Return True if object has value"""
         return bool(self._values)
+    
+    def update(self,other):
+        """update self with another symbol.
+        update possible :
+            - name (add short or long name)
+            - tag number (if not already set)
+            - a lang/value pair
+            - a _temp_value if not set already
+            - children (by calling self.children.updateChild(child,declaration=False)
+            """
+        # update name
+        if self.name != other.name:
+            self.name.short = other.name.long
+            self.name.long = other.name.long
+
+        # update tag number
+        if other._tag_nb:
+            if self._tag_nb and self._tag_nb != other._tag_nb:
+                raise exception.InconsistentTagNumber
+            self._tag_nb = other._tag_nb
+
+        # update value
+        for lang,value in other._values.items():
+            self.setValue(value,lang)
+
+        # update _temp_value
+        if getattr(other,'_temp_value',False):
+            self.setValue(other._temp_value)
+
+        # update children
+        if getattr(other,'children',False):
+            for child in other.children:
+                self.updateChild(child,declaration=False) 
+
+
 
 class ChildrenSymbols:
     """The table of the children symbols"""
@@ -187,17 +228,26 @@ class ChildrenSymbols:
 
     def updateChild(self,child,declaration=True):
         """If child doesn't exist yet, add it.
-        Else update existing child #TODO
+        Else update existing child 
         if declaration==False, does not use self.declared_children""" 
         if declaration:
             if child._temp_name not in self.declared_children:
                 raise NameError('{} has not been declared before definition'.format(child._temp_name))
             child.name = [name for name in self.declared_children if child._temp_name == name][0]
             self.declared_children.remove(child.name)
-        else:
+        elif not getattr(child,'name',False):
             child.name = Name(long=child._temp_name)
             del(child._temp_name)
-        self._children[child.name] = child
+        
+        matching_children = [name for name in self._children.keys() if child.name.partialEq(name) ]
+        if not matching_children:
+            self._children[child.name] = child
+        else: # update the child
+            if len(matching_children) > 1:
+                raise exception.NameConflict # TODO
+            matching_children[0].update(child)
+            
+
 
     def updateValues(self, lang: str):
         """update the values of all the children
@@ -242,7 +292,12 @@ class ChildrenSymbols:
 
     def giveChild(self,value: str) -> Symbol:
         """Look in self._children to find
-        the child.""" # TODO verify that string does not contain spaces or is empty 
+        the child.""" 
+        if re.search(r"\s",value):
+            raise ValueError("Value cann'ot contain whitespaces")
+        if not value:
+            raise ValueError("Value cann'ot be empty")
+
         child = None
         if value[0] == '.': # case of value starting by a dot (to separate long names)
             if '.' in self:
@@ -267,7 +322,7 @@ class ChildrenSymbols:
     def _match_with(self,value: str,name_type: str):
         """Method used by giveChild to see
         if the first part of value can be found
-        in instance
+        in self 
         return tuple(Symbol,str) or None"""
         names = [ getattr(name,name_type) for name in self._children if getattr(name,name_type) ]
         for name in names:

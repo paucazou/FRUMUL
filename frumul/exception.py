@@ -2,6 +2,14 @@
 # -*-coding:Utf-8 -*
 #Deus, in adjutorium meum intende
 """Define exceptions of FRUMUL"""
+import sys
+
+# redefining excepthook in order to free user from useless python messages
+def excepthook(type,value,traceback):
+    msg = type.__name__ + ": " + value
+    sys.stderr.write(msg)
+
+sys.excepthook = excepthook # use it only with the user
 
 class _ExceptionBase(Exception):
     """Base class of every other exception"""
@@ -34,13 +42,36 @@ class _ExceptionBase(Exception):
         return s
 
         
-
+# header errors
 class HeaderError(_ExceptionBase):
     """Exception raised when an error
     occurs in a header"""
     pass
 
+class InconsistentTagNumber(HeaderError):
+    """Raise this error if a symbol
+    is updated with a non equal tag number
+    or if the symbol has a number of placeholders
+    unequal to tag number"""
+    pass
+
+class NameConflict(HeaderError):
+    """Raise this error when a symbol matches
+    with two or more other symbols,
+    or when updating a symbol,
+    long & short names (if set) don't match"""
+    pass
+
+# text errors
 class TextError(_ExceptionBase):
     """Exception raised when an error
     occurs in a text"""
+    pass
+
+# errors raised when frumul does not know
+# if the error is in the header or in the text.
+
+class UnavailableLanguage(TextError,HeaderError):
+    """Raise this error when a value is not available
+    for the requested language"""
     pass

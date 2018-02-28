@@ -36,8 +36,8 @@ def newFile(output,headers):
     """Create a new file with specific headers"""
     assignments = ''
     for header in headers: # TODO verify that header entered is in stlib or in the right place
-        assignments += ':'.join(header[::-1])
-    content = '___header___'+ assignments + '___text___\n'
+        assignments += ':'.join(header[::-1]) + "\n"
+    content = '___header___\n'+ assignments + '___text___\n'
 
     output.write(content)
     output.close()
