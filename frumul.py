@@ -8,8 +8,21 @@ import os
 import sys
 from frumul import lexer, parser, semizer, transpiler
 
+dir = os.path.dirname(os.path.abspath(__file__)) + '/'
+
 # env variables
-os.environ['STDLIB'] = os.path.abspath('./frumul/headers') + '/' # '/' because abspath deletes it
+os.environ['STDLIB'] = dir + 'frumul/headers/'
+print(os.environ['STDLIB'])
+
+def checkHeader(name: str) -> bool:
+    """Checks if name is in standard library
+    if name has no '.h' suffix."""
+    if name[-2:] == '.h':
+        return True
+    return os.path.isfile(os.environ['STDLIB'] + name + '.h')
+
+
+
 
 def transpile(input,output,lang: str):
     """Transpile from input to output for requested lang"""
@@ -35,8 +48,10 @@ def transpile(input,output,lang: str):
 def newFile(output,headers):
     """Create a new file with specific headers"""
     assignments = ''
-    for header in headers: # TODO verify that header entered is in stlib or in the right place
-        assignments += ':'.join(header[::-1]) + "\n"
+    for header in headers: 
+        if not checkHeader(header[0]):
+            raise NameError("No header of this name in standard lib: {}".format(header[0])) # TODO # delete file if error
+        assignments += ': file "'.join(header[::-1]) + '"\n'
     content = '___header___\n'+ assignments + '___text___\n'
 
     output.write(content)
