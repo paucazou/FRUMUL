@@ -12,7 +12,6 @@ dir = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 # env variables
 os.environ['STDLIB'] = dir + 'frumul/headers/'
-print(os.environ['STDLIB'])
 
 def checkHeader(name: str) -> bool:
     """Checks if name is in standard library

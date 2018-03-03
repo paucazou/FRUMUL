@@ -10,7 +10,9 @@ sys.path.append('..')
 import frumul
 
 afile = "afile.uu"
-os.environ['STDLIB'] = os.path.abspath('../frumul/headers') + '/'
+dir = os.path.dirname(os.path.abspath(__file__)) + '/'
+os.environ['STDLIB'] = dir +'../frumul/headers/'
+print(os.environ['STDLIB'])
 
 def lexer(content,filename=afile):
     """return the results of lexer.Lexer()"""

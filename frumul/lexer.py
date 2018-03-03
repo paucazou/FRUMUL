@@ -17,7 +17,6 @@ header_regex = collections.OrderedDict([
     (WHITESPACE,re.compile(r'\s')),
     (HEADER,re.compile('___header___',re.IGNORECASE)),
     (FULLTEXT,re.compile('___text___(.*$)',re.DOTALL+re.IGNORECASE)), 
-    (ASSIGN,re.compile(r':')),
     (MARK,re.compile(r'mark',re.IGNORECASE)),
     (FILE,re.compile(r'file',re.IGNORECASE)),
     (LANG,re.compile(r'lang',re.IGNORECASE)),
@@ -26,6 +25,7 @@ header_regex = collections.OrderedDict([
     (RPAREN,re.compile(r'\)')),
     (VALUE,re.compile(r'"(\\"|[^"])*"')),
     (ID,re.compile(r'[^ ]+(?= *:)')), # replace & TEST [^ ] by \S (not \s)
+    (ASSIGN,re.compile(r':')), # moved (it was under ___text___) Check if no error is caused by that movement
         ])
 value_content = re.compile(r'(?<=").*(?=")')
 

@@ -2,14 +2,19 @@
 # -*-coding:Utf-8 -*
 #Deus, in adjutorium meum intende
 """Define exceptions of FRUMUL"""
+import os
 import sys
 
 # redefining excepthook in order to free user from useless python messages
 def excepthook(type,value,traceback):
-    msg = type.__name__ + ": " + value
+    msg = type.__name__ + ": " + str(value)
     sys.stderr.write(msg)
 
-sys.excepthook = excepthook # use it only with the user
+
+if not os.environ.get('FRUMULTEST',False) : # export FRUMULTEST=0 // for tests
+    sys.excepthook = excepthook # use it only with the user
+else:
+    print("Developement traceback activated.")
 
 class _ExceptionBase(Exception):
     """Base class of every other exception"""
