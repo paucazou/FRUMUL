@@ -125,7 +125,11 @@ class Symbol:
         """Get specific value.
         If lang unavailable, try to return the 'every' value"""
         try:
-            return self._values.get(lang,self._value['every'])
+            return_value = self._values.get(lang)
+            if not return_value:
+                return self._values['every']
+            else:
+                return return_value
         except KeyError:
             raise ValueError('No value for requested lang: {}'.format(lang))
 

@@ -15,12 +15,11 @@ class Semizer(walker.NodeVisitor):
         """Visit self.node
         Set self.constants
         return self.constants"""
-        self.visit(self.node)
-        return self.constants
+        return self.visit(self.node)
 
     def visit_Document(self,node):
         """Visit Document"""
-        self.visit(node.header)
+        return self.visit(node.header)
 
     def visit_Header(self,node):
         """Visit Document"""
@@ -30,10 +29,12 @@ class Semizer(walker.NodeVisitor):
         for constant in self.constants:
             if constant.hasValue() and constant.hasChildren():
                 raise ValueError('''An Opening tag canno't have a value and a child: {}'''.format(constant)) # if a constant has both, it is impossible to parse the text without ambiguity
+        return self.constants
 
     def visit_Statement(self,node):
         """Visit Statement"""
         lang, tag_nb = self.visit(node.options)
+        print(lang,tag_nb)
         constant = symbols.Symbol(temp_name=node.constant.value,tag_nb=tag_nb)
         value, children = self.visit(node.definition)
         if children:

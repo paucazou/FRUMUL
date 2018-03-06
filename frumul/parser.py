@@ -49,11 +49,18 @@ class Parser:
         else:
             self._current_token = None
 
-    def __call__(self):
-        """Parse the tokens"""
+    def __call__(self,file=False):
+        """Parse the tokens
+        if file is True, parse a header file only"""
         self._pos = -1
         self._advance()
-        node = self._document()
+        if file:
+            fake_constant = lexer.Token("ID","FAKE",None,None,None)
+            options, definition = self._definition()
+            node = Statement(fake_constant,options,definition)
+            self._eat(EOF)
+        else:
+            node = self._document()
         self._pos = -1
         return node
 

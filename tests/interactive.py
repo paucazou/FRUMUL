@@ -19,15 +19,15 @@ def lexer(content,filename=afile):
     l=frumul.lexer.Lexer(content,filename)
     return l()
 
-def parser(content,filename=afile):
+def parser(content,filename=afile,header=False):
     """return the results of parser.Parser()"""
     tokens = lexer(content,filename)
     p=frumul.parser.Parser(tokens)
-    return p()
+    return p(header)
 
-def semizer(content,filename=afile):
+def semizer(content,filename=afile,header=False):
     """return the result of the semizer"""
-    ast = parser(content,filename)
+    ast = parser(content,filename,header)
     sem = frumul.semizer.Semizer(ast)
     return sem()
 
