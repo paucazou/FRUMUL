@@ -91,15 +91,17 @@ class Symbol:
         children = len(getattr(self,'children',''))
         return "{}({}, value={}, tagNb={}, children={})".format(type(self).__name__,name,value,tag,children)
 
-    def _get_tag(self) -> int:
+    def _get_tag(self) -> int: 
         """Return number of tags requested by this symbol
         if self._tag_nb is set, return it
         else, ask it to parent and set self._tag_nb"""
         if not self._tag_nb:
             if self.parent:
                 self._tag_nb = self.parent.tag
+            elif self.hasValue():
+                raise ValueError("No parent have been set for this Symbol, or no tag number has been declared: {}".format(self.name)) # INFINITE loop... peut-être renvoyer une valeur nulle, car tous les symboles n'ont pas forcément de tag number... Ne renvoyer l'erreur que s'il n'y a pas de valeur enregistrée
             else:
-                raise ValueError("No parent have been set for this Symbol, or no tag number has been declared: {}".format(self))
+                self._tag_nb = None
         return self._tag_nb
 
     tag = property(_get_tag)

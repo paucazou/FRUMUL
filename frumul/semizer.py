@@ -34,7 +34,6 @@ class Semizer(walker.NodeVisitor):
     def visit_Statement(self,node):
         """Visit Statement"""
         lang, tag_nb = self.visit(node.options)
-        print(lang,tag_nb)
         constant = symbols.Symbol(temp_name=node.constant.value,tag_nb=tag_nb)
         value, children = self.visit(node.definition)
         if children:
