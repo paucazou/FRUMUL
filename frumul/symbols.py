@@ -98,8 +98,8 @@ class Symbol:
         if not self._tag_nb:
             if self.parent:
                 self._tag_nb = self.parent.tag
-            elif self.hasValue():
-                raise ValueError("No parent have been set for this Symbol, or no tag number has been declared: {}".format(self.name)) # INFINITE loop... peut-être renvoyer une valeur nulle, car tous les symboles n'ont pas forcément de tag number... Ne renvoyer l'erreur que s'il n'y a pas de valeur enregistrée
+            if self.hasValue() and not self._tag_nb:
+                raise ValueError("No parent have been set for this Symbol, or no tag number has been declared: {}".format(self.name)) # risque qu'il n'y ait pas de name...
             else:
                 self._tag_nb = None
         return self._tag_nb
@@ -135,6 +135,9 @@ class Symbol:
         except KeyError:
             raise ValueError('No value for requested lang: {}'.format(lang))
 
+    def getLanguages(self) -> tuple:
+        """Return the languages available for self"""
+        return tuple(self._values.keys())
 
 
     def hasChildren(self) -> bool:

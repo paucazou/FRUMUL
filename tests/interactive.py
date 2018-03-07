@@ -49,3 +49,8 @@ def transpiler(content,lang,filename=afile):
     """return the result of transpiler.Transpiler"""
     ast = text_parser(content,filename)
     return frumul.transpiler.Transpiler(ast,lang)()
+
+def header_source(content,filename=afile,header=False):
+    """return the source code of a header"""
+    sem = semizer(content,filename,header)
+    return frumul.tosource.HeaderSourcer(sem)()
