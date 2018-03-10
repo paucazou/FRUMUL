@@ -178,8 +178,10 @@ class Symbol:
 
         # update children
         if getattr(other,'children',False):
+            if not self.hasChildren():
+                self.children = ChildrenSymbols()
             for child in other.children:
-                self.updateChild(child,declaration=False) 
+                self.children.updateChild(child,declaration=False) 
 
 
 
@@ -247,10 +249,10 @@ class ChildrenSymbols:
         Else update existing child 
         if declaration==False, does not use self.declared_children""" 
         if declaration:
-            if child._temp_name not in self.declared_children:
+            if child._temp_name not in [elt for elt in self.declared_children]: # for unknow reason, it is necessary to set a list, maybe because of hash
                 raise NameError('{} has not been declared before definition'.format(child._temp_name))
             child.name = [name for name in self.declared_children if child._temp_name == name][0]
-            self.declared_children.remove(child.name)
+            self.declared_children[child.name] = True
         elif not getattr(child,'name',False):
             child.name = Name(long=child._temp_name)
             del(child._temp_name)
@@ -261,7 +263,8 @@ class ChildrenSymbols:
         else: # update the child
             if len(matching_children) > 1:
                 raise exception.NameConflict # TODO
-            matching_children[0].update(child)
+            name = matching_children[0]
+            self._children[name].update(child)
             
 
 
@@ -277,14 +280,20 @@ class ChildrenSymbols:
 
     def declare(self,value: lexer.Token):
         """Declare children""" 
-        self.declared_children = [
-                name for name in self._parse(value)
-                ]
-        for i,name in enumerate(self.declared_children):
-            double = [other for other in self.declared_children[i+1:] if name.partialEq(other)]
+        self.declared_children = {}
+        for name in self._parse(value):
+            double = [other for other in self.declared_children.keys() if name.partialEq(other)]
             if double:
                 raise NameError("Two constants have the same name: {} - {}".format(name,double[0]))
+            else:
+                self.declared_children[name] = False
 
+    def _get_children_not_defined(self):
+        """return a list of children undefined"""
+        undefined = [name for name,isdefined in self.declared_children.items() if not isdefined]
+        return undefined
+
+    childrenUndefined = property(_get_children_not_defined)
 
     def _parse(self,value: lexer.Token):
         """Generator. Parse a string
