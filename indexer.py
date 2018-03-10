@@ -3,6 +3,7 @@
 #Deus, in adjutorium meum intende
 """Indexer leaned against FRUMUL"""
 import argparse
+import os
 import readline
 from frumul import lexer, parser, semizer, symbols, tosource
 
@@ -15,6 +16,14 @@ def finput(prompt='>>> ', text=''):
     result = input(prompt + '\n')
     readline.set_pre_input_hook()
     return result
+
+def finputWrapper(prompt=">>>", text="",exval="") -> str:
+    """Handle ctrl+D: exval is returned"""
+    try:
+        res=finput(prompt,text)
+    except EOFError:
+        res = exval
+    return res
 
 def checkName(value: str) -> bool:
     """Checks wether value starts and
@@ -36,7 +45,7 @@ def _createItem(value: str,children: symbols.ChildrenSymbols,short_name=None,set
     symbol = symbols.Symbol(tag_nb=1)
     symbol.name = name
     if set_null_value:
-        symbol.setValue('',"every")
+        symbol.setValue(' ',"every")
     children.updateChild(symbol,declaration=False) # TODO verify 
 
 def _createColumn(value: str, children: symbols.ChildrenSymbols):
@@ -45,21 +54,31 @@ def _createColumn(value: str, children: symbols.ChildrenSymbols):
     value = "___{}___".format(value)
     _createItem(value,children,short_name=short_name,set_null_value=True)
 
+def _loadProject(path: str) -> symbols.Symbol:
+    """Load a project as a fake symbol"""
+    with open(path) as f:
+        content = f.read()
+    tokens = lexer.Lexer(content,path)() 
+    ast = parser.Parser(tokens)(header_file=True)
+    return semizer.Semizer(ast)()
+
+def _saveProject(path: str, data: symbols.Symbol):
+    """Save a project"""
+    with open(path,'w') as f:
+        content = tosource.HeaderSourcer(data)()
+        f.write(content)
 
 
 def _manage(args: argparse.Namespace):
     """Manage a project"""
     if args.start:
-	#TODO vérifier qu'aucun projet n'existe déjà sous ce nom
+        if os.path.isfile(args.PROJECT):
+            raise NameError("'{}' already exist.".format(args.PROJECT))
         fake_symbol = symbols.Symbol(temp_name="FAKE")
         fake_symbol.children = symbols.ChildrenSymbols()
         _createItem("___files",fake_symbol.children,set_null_value=True) # files name has no trailing ___ in order to not let the user touch it
     elif args.update:
-        with open(args.PROJECT) as f:
-            content = f.read()
-        tokens = lexer.Lexer(content,args.PROJECT)() 
-        ast = parser.Parser(tokens)(header=True)
-        fake_symbol = semizer.Semizer(ast)()
+        fake_symbol = _loadProject(args.PROJECT)
     else:
         raise ValueError("No command was given\n")
 
@@ -71,27 +90,25 @@ def _manage(args: argparse.Namespace):
         columns = [setName(child.name.long) for child in fake_symbol.children if checkName(child.name.long)] 
         shorts = [name[0] for name in columns]
         print("\n".join(columns))
-        result = finput("1. Type a new name to create it. The first letter will be used to give its short name.\n2. Type an already set name to update it: '-' delete it;'*' modify name;\n3. type {} to exit.".format(exit_value)) # TODO rewrite text
+        result = finputWrapper("1. Type a new name to create it. The first letter will be used to give its short name.\n2. Type an already set name to update it: '-' delete it;'*' modify name;\n3. Type {} to exit (or Ctrl+D).".format(exit_value),exval=exit_value) # TODO rewrite text
         if result == exit_value:
             break
-        if result not in columns:
-            if result[0] in shorts:
-                print("Short name already taken")
-            else:
-                _createColumn(result,fake_symbol.children)
-        elif result[:-2] in columns:
-            name = "___{}___".format(result[:-2])
+        elif result[:-1] in columns:
+            name = "___{}___".format(result[:-1])
             if result[-1] == "-":
                 del(fake_symbol.children[name])
             elif result[-1] == '*':
                 pass # TODO modify name
             else:
                 print("Sign unrecognized")
+        elif result not in columns:
+            if result[0] in shorts:
+                print("Short name already taken")
+            else:
+                _createColumn(result,fake_symbol.children)
 
     if finput("Save ?(y/n)","y") == "y":
-        with open(args.PROJECT,'w') as f:
-            content = tosource.HeaderSourcer(fake_symbol)()
-            f.write(content)
+        _saveProject(args.PROJECT,fake_symbol)
 
 
 
@@ -99,7 +116,28 @@ def _manage(args: argparse.Namespace):
 
 def _files(args: argparse.Namespace):
     """Manage the files inside a project"""
-    pass
+    project = _loadProject(args.PROJECT)
+    files = project.children['___files']
+    if args.add: # TODO ne sauvegarder que le chemin relatif vers le fichier depuis le projet.
+        if not files.hasChildren():
+            files.children = symbols.ChildrenSymbols()
+        if args.add not in files.children:
+            _createItem(args.add,files.children,set_null_value=True)
+            print("'{}' registered in project '{}'".format(args.add,args.PROJECT))
+        else:
+            raise NameError("'{}' already saved inside files".format(args.add))
+    elif args.remove: # TODO idem que là haut
+        if not getattr(files,'children',False) or args.remove not in files.children:
+            raise NameError("'{}' can't be found.".format(args.remove))
+        else:
+            del(files.children[args.remove])
+            print("'{}' removed from project '{}'".format(args.remove,args.PROJECT))
+
+    else:
+        raise ValueError("No name entered")
+
+    _saveProject(args.PROJECT,project)
+
 
 def _items(args: argparse.Namespace):
     """Manage the items inside a project"""
