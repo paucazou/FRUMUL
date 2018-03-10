@@ -221,6 +221,13 @@ class ChildrenSymbols:
         else:
             raise KeyError("No symbol with requested tag: {}".format(entry))
 
+    def __delitem__(self,key):
+        """Remove a child. Key can be a string
+        or a Name object"""
+        if isinstance(key,str):
+            key = [name for name in self._children if key == name][0]
+        del(self._children[key])
+
     def _set_parent(self,parent):
         """Set parent"""
         if self._parent:
