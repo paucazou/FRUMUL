@@ -7,7 +7,7 @@ import sys
 
 # redefining excepthook in order to free user from useless python messages
 def excepthook(type,value,traceback):
-    msg = type.__name__ + ": " + str(value)
+    msg = type.__name__ + ": " + str(value) + "\n"
     sys.stderr.write(msg)
 
 
