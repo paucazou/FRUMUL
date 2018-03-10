@@ -106,16 +106,17 @@ class Symbol:
 
     tag = property(_get_tag)
 
-    def setValue(self,value: str,lang=None):
-        """set a value for specific lang"""
+    def setValue(self,value: str,lang=None,change_authorized=False):
+        """set a value for specific lang
+        if change_authorized is set, it is possible to change a value"""
         if value == getattr(self,'_temp_value',False):
             del(self._temp_value)
         if lang:
             #self.current_lang = lang # à vérifier avant de supprimer
-            if lang not in self._values:
+            if lang not in self._values or change_authorized:
                 self._values[lang] = value
             else:
-                raise ValueError("{} has already a value for {} language: {}".format(self,lang,self._value))
+                raise ValueError("{} has already a value for {} language: {}".format(self,lang,self._values[lang]))
 
         else:
             if self.__dict__.get('_temp_value',True):

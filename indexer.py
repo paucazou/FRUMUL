@@ -37,22 +37,22 @@ def setName(value: str):
     """Suppress initial & trailing ___"""
     return value[3:][:-3]
 
-def _createItem(value: str,children: symbols.ChildrenSymbols,short_name=None,set_null_value=False):
+def _createItem(value: str,children: symbols.ChildrenSymbols,short_name=None,set_base_value=False):
     """Create an item inside the file
     if short_name is set, create the short name provided
-    if set_null_value is True, give a "" value to symbol created"""
+    if set_base_value is not False, give its value to symbol created"""
     name = symbols.Name(long=value,short=short_name)
     symbol = symbols.Symbol(tag_nb=1)
     symbol.name = name
-    if set_null_value:
-        symbol.setValue(' ',"every")
+    if set_base_value is not False:
+        symbol.setValue(set_base_value,"every")
     children.updateChild(symbol,declaration=False) # TODO verify 
 
 def _createColumn(value: str, children: symbols.ChildrenSymbols):
     """Create a column inside the file"""
     short_name = value[0]
     value = "___{}___".format(value)
-    _createItem(value,children,short_name=short_name,set_null_value=True)
+    _createItem(value,children,short_name=short_name,set_base_value=" ")
 
 def _loadProject(path: str) -> symbols.Symbol:
     """Load a project as a fake symbol"""
@@ -64,9 +64,13 @@ def _loadProject(path: str) -> symbols.Symbol:
 
 def _saveProject(path: str, data: symbols.Symbol):
     """Save a project"""
-    with open(path,'w') as f:
-        content = tosource.HeaderSourcer(data)()
-        f.write(content)
+    if finput("Save ?(y/n)","y") == "y":
+        with open(path,'w') as f:
+            content = tosource.HeaderSourcer(data)()
+            f.write(content)
+        print("Data saved")
+    else:
+        print("Discard")
 
 
 def _manage(args: argparse.Namespace):
@@ -76,7 +80,7 @@ def _manage(args: argparse.Namespace):
             raise NameError("'{}' already exist.".format(args.PROJECT))
         fake_symbol = symbols.Symbol(temp_name="FAKE")
         fake_symbol.children = symbols.ChildrenSymbols()
-        _createItem("___files",fake_symbol.children,set_null_value=True) # files name has no trailing ___ in order to not let the user touch it
+        _createItem("___files",fake_symbol.children,set_base_value=" ") # files name has no trailing ___ in order to not let the user touch it
     elif args.update:
         fake_symbol = _loadProject(args.PROJECT)
     else:
@@ -107,8 +111,7 @@ def _manage(args: argparse.Namespace):
             else:
                 _createColumn(result,fake_symbol.children)
 
-    if finput("Save ?(y/n)","y") == "y":
-        _saveProject(args.PROJECT,fake_symbol)
+    _saveProject(args.PROJECT,fake_symbol)
 
 
 
@@ -122,7 +125,7 @@ def _files(args: argparse.Namespace):
         if not files.hasChildren():
             files.children = symbols.ChildrenSymbols()
         if args.add not in files.children:
-            _createItem(args.add,files.children,set_null_value=True)
+            _createItem(args.add,files.children,set_base_value=" ")
             print("'{}' registered in project '{}'".format(args.add,args.PROJECT))
         else:
             raise NameError("'{}' already saved inside files".format(args.add))
@@ -138,15 +141,60 @@ def _files(args: argparse.Namespace):
 
     _saveProject(args.PROJECT,project)
 
+def _enterValue(columns: list,name: str,update=False):
+    """Enter a value inside a project"""
+    exit_value = "_"*3 + "exit" + "_"*3
+    # create the value inside columns
+    if not update:
+        for column in columns:
+            if not column.hasChildren():
+                column.children = symbols.ChildrenSymbols()
+            _createItem(name,column.children,set_base_value='')
+
+    # setting value
+    for i,column in enumerate(columns):
+        cname = 'main' if i == 0 else setName(column.name.long)
+        container = column.children[name]
+        res = finputWrapper("Set value for column '{}'".format(cname),container.getValue('every'),exval=exit_value)
+        if res == exit_value:
+            return exit_value
+        container.setValue(res,'every',change_authorized=True) # MEGA BUG: impossible to set a value already set...
 
 def _items(args: argparse.Namespace):
     """Manage the items inside a project"""
-    pass
+    project = _loadProject(args.PROJECT)
+    columns = [project] + [child for child in project.children if checkName(child.name.long)]
+    
+    result = None
+    exit_value = "_"*3 + "exit" + "_"*3
+    while result != exit_value:
+        print("Values already entered:")
+        base = [child.name.long for child in project.children if child.name != '___files' and not checkName(child.name.long)]
+        print('><'.join(base))
+        print("You can exit by typing {} or Ctrl+D".format(exit_value))
+        if args.add or args.change:
+            res = finputWrapper("Enter id:",exval=exit_value)
+            if res == exit_value:
+                break
+            else:
+                res = _enterValue(columns,res,args.change)
+            if res == exit_value:
+                break
+        elif args.remove:
+            raise NotImplemented
+        else:
+            raise ValueError("No option entered")
+    _saveProject(args.PROJECT,project)
+
+def _print(args: argparse.Namespace):
+    """A representation of a project"""
+    raise NotImplemented
 
 def _cmdline() -> argparse.Namespace:
     """Manages the command-line arguments"""
     parser = argparse.ArgumentParser(description="FRUMUL indexer")
     parser.add_argument("PROJECT",help="Path of the project file")
+    parser.set_defaults(func=_print)
     subparsers = parser.add_subparsers(help="Commands")
 
     project_management = subparsers.add_parser("manage",help="Project management")
@@ -165,7 +213,7 @@ def _cmdline() -> argparse.Namespace:
     items_management.set_defaults(func=_items)
     im_options = items_management.add_mutually_exclusive_group()
     im_options.add_argument("--add",action="store_true",help="Add new entries into a project")
-    im_options.add_argument("--change",action="store_true",help="Change an item inside a project")
+    im_options.add_argument("--change",action="store_true",default=False,help="Change an item inside a project")
     im_options.add_argument("--remove",action="store_true",help="Remove an item from a project")
     
     return parser.parse_args()
@@ -191,7 +239,7 @@ def _add_file(project_path: str,new_file_path: str):
 def main():
     """Main function"""
     args = _cmdline()
-    args.func(args)
+    args.func(args) 
 
 if __name__ == '__main__':
     main()
