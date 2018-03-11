@@ -52,7 +52,7 @@ def _createColumn(value: str, children: symbols.ChildrenSymbols):
     """Create a column inside the file"""
     short_name = value[0]
     value = "___{}___".format(value)
-    _createItem(value,children,short_name=short_name,set_base_value=" ")
+    _createItem(value,children,short_name=short_name,set_base_value=" ") # TODO create empty values for each new column
 
 def _loadProject(path: str) -> symbols.Symbol:
     """Load a project as a fake symbol"""
@@ -162,6 +162,9 @@ def _enterValue(columns: list,name: str,update=False):
 
 def _items(args: argparse.Namespace):
     """Manage the items inside a project"""
+    if not args.add and not args.change and not args.remove:
+        raise ValueError("No option entered")
+
     project = _loadProject(args.PROJECT)
     columns = [project] + [child for child in project.children if checkName(child.name.long)]
     
@@ -172,18 +175,19 @@ def _items(args: argparse.Namespace):
         base = [child.name.long for child in project.children if child.name != '___files' and not checkName(child.name.long)]
         print('><'.join(base))
         print("You can exit by typing {} or Ctrl+D".format(exit_value))
-        if args.add or args.change:
-            res = finputWrapper("Enter id:",exval=exit_value)
-            if res == exit_value:
-                break
-            else:
-                res = _enterValue(columns,res,args.change)
-            if res == exit_value:
-                break
+        result = finputWrapper("Enter id:",exval=exit_value)
+        if result == exit_value:
+            break
+        elif args.add or args.change:
+            result = _enterValue(columns,result,args.change)
         elif args.remove:
-            raise NotImplemented
-        else:
-            raise ValueError("No option entered")
+            if result not in base:
+                print("No ID : '{}'".format(result))
+            else:
+                for column in columns:
+                    del(column.children[result])
+                print("'{}' deleted".format(result))
+
     _saveProject(args.PROJECT,project)
 
 def _print(args: argparse.Namespace):
