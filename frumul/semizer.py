@@ -43,7 +43,7 @@ class Semizer(walker.NodeVisitor):
             constant.children = children
             if constant.children.childrenUndefined: 
                 raise ValueError("Children declared, but not defined: {}".format(constant.children.childrenUndefined))
-        elif value:
+        elif value is not None: 
             constant.setValue(value,lang)
 
         return constant

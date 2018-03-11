@@ -124,6 +124,7 @@ class Symbol:
             else:
                 raise ValueError("There is already a temp value: {}".format(self._temp_value))
 
+
     def getValue(self,lang: str) -> str:
         """Get specific value.
         If lang unavailable, try to return the 'every' value"""
