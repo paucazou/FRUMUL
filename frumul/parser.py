@@ -23,9 +23,12 @@ Definition = collections.namedtuple('Definition',('value','statement_list'))
 
 class Parser:
     """Parses the tokens and return an AST"""
-    def __init__(self,tokens: list):
-        """Inits the instance"""
+    def __init__(self,tokens: list,loaded_files=None):
+        """Inits the instance
+        loaded_files lists the path of files already loaded in order to prevent recursive loading"""
         self.tokens = tokens
+        self.loaded_files = loaded_files if loaded_files else []
+        self.loaded_files.append(tokens[0].file.path)
 
     def _error(self,type):
         """Raises error"""
@@ -141,10 +144,10 @@ class Parser:
 
         return result
 
-    def _file_assignment(self):
+    def _file_assignment(self): 
         """file_assignment : 'file' value EOF"""
         self._eat(FILE)
-        file_token = self._current_token # there will be probably a problem here -> use normpath or something like that
+        file_token = self._current_token 
         self._eat(VALUE)
 
         dirname = os.path.dirname(file_token.file.path) + '/'
@@ -154,11 +157,16 @@ class Parser:
             if not os.path.isfile(file_path):
                 raise ValueError("No header file found for '{}'".format(file_token.value))
 
-        with open(file_path) as f:
-            headerfile = f.read()
+        if file_path not in self.loaded_files:
+            loaded_files = self.loaded_files.copy() # if self.loaded_files is passed directly, the list will be modified by each new parser resulting in a inconsistent line of calls
+            loaded_files.append(file_path)
+            with open(file_path) as f:
+                headerfile = f.read()
+        else: 
+            raise ValueError("This header has already been loaded. Program is stopped in order to prevent recursive load: '{}'".format(file_path))
 
         tokens = lexer.Lexer(headerfile,file_path)()
-        parser = Parser(tokens)
+        parser = Parser(tokens,loaded_files)
         parser._pos = -1
         parser._advance()
         definition = parser._definition()
