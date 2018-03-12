@@ -9,9 +9,12 @@ lang "latex" "t(title) l(list) p(position) s(spacing)"
    subsection : "\\subsection*\{{}}"
   )
  )
- list : "d(description) i(item)"
+ list : "d(description) i(item) u(unorderedlist) o(orderedlist) t(itemspecial)"
  (description : mark "2" "\\begin\{description}{}\\end\{description}"
-  item : mark "3" "\\item[{}]{}"
+  unorderedlist : mark "2" "\\begin\{itemize}{}\\end\{itemize}"
+  orderedlist : mark "2" "\\begin\{enumerate}{}\\end\{enumerate}"
+  item : mark "1" "\\item" //*TODO à tester impérativement *//
+  itemspecial : mark "3" "\\item[{}]{}"
  )
  position : mark "2" "l(left) c(center) r(right)"
  (left : "\\begin\{flushleft}{}\\end\{flushleft}"
