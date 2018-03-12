@@ -3,9 +3,30 @@
 #Deus, in adjutorium meum intende
 """Indexer leaned against FRUMUL"""
 import argparse
+import collections
 import os
+import pydoc
 import readline
+import shutil
+import textwrap
+from colorama import Fore, Style
 from frumul import lexer, parser, semizer, symbols, tosource
+
+# TODO DELETE
+"""
+class Fore:
+    RED='\x1b[31m'
+    GREEN='\x1b[32m'
+    MAGENTA='\x1b[36m'
+
+class Style:
+    RESET_ALL='\x1b[0m'
+# TODO DELETE
+"""
+
+inred = lambda x: Fore.RED + x + Style.RESET_ALL
+ingreen = lambda x: Fore.GREEN + x + Style.RESET_ALL
+inmagenta = lambda x: Fore.MAGENTA + x + Style.RESET_ALL
 
 def finput(prompt='>>> ', text=''):
     text = str(text)
@@ -33,6 +54,11 @@ def checkName(value: str) -> bool:
     except (IndexError, TypeError):
         return False
 
+def itemsOnly(children: symbols.ChildrenSymbols) -> list:
+    """Return a list of items, not special constants
+    defined by the indexer"""
+    return [symbol for symbol in children if symbol.name.long != '___files' and not checkName(symbol.name.long)]
+
 def setName(value: str):
     """Suppress initial & trailing ___"""
     return value[3:][:-3]
@@ -52,7 +78,13 @@ def _createColumn(value: str, children: symbols.ChildrenSymbols):
     """Create a column inside the file"""
     short_name = value[0]
     value = "___{}___".format(value)
-    _createItem(value,children,short_name=short_name,set_base_value=" ") # TODO create empty values for each new column
+    _createItem(value,children,short_name=short_name,set_base_value=" ")
+    items = itemsOnly(children)
+    if items:
+        column = children[value]
+        column.children = symbols.ChildrenSymbols()
+        for item in items:
+            _createItem(item.name.long,column.children,set_base_value='')
 
 def _loadProject(path: str) -> symbols.Symbol:
     """Load a project as a fake symbol"""
@@ -121,7 +153,7 @@ def _files(args: argparse.Namespace):
     """Manage the files inside a project"""
     project = _loadProject(args.PROJECT)
     files = project.children['___files']
-    if args.add: # TODO ne sauvegarder que le chemin relatif vers le fichier depuis le projet.
+    if args.add: # TODO ne sauvegarder que le chemin relatif vers le fichier depuis le projet. # use relpath
         if not files.hasChildren():
             files.children = symbols.ChildrenSymbols()
         if args.add not in files.children:
@@ -158,7 +190,7 @@ def _enterValue(columns: list,name: str,update=False):
         res = finputWrapper("Set value for column '{}'".format(cname),container.getValue('every'),exval=exit_value)
         if res == exit_value:
             return exit_value
-        container.setValue(res,'every',change_authorized=True) # MEGA BUG: impossible to set a value already set...
+        container.setValue(res,'every',change_authorized=True) 
 
 def _items(args: argparse.Namespace):
     """Manage the items inside a project"""
@@ -190,9 +222,48 @@ def _items(args: argparse.Namespace):
 
     _saveProject(args.PROJECT,project)
 
-def _print(args: argparse.Namespace):
+def _print(args: argparse.Namespace): # TODO add color
     """A representation of a project"""
-    raise NotImplemented
+    termlen = shutil.get_terminal_size().columns
+    sep = '='*termlen + '\n'
+    # infos
+    project = _loadProject(args.PROJECT)
+    project.name = symbols.Name(long='___Main___')
+    title = os.path.basename(args.PROJECT) + '\n'
+    ##files
+    files_column = project.children['___files']
+    if files_column.hasChildren():
+        files = [file for file in files_column.children]
+    else:
+        files = []
+    ## items
+    items_id = [child.name.long for child in itemsOnly(project.children)]
+    columns = [project] + [column for column in project.children if checkName(column.name.long)]
+    items = {}
+    for id in items_id:
+        key = id
+        value = collections.OrderedDict(
+                [(setName( column.name.long ),column.children[id].getValue('every')) for column in columns]
+                )
+        items[key] = value
+
+
+    # infos creations
+    infos = inred(title) + sep
+    infos += inred('[FILES]\n') + '\n'.join(files) + sep
+    infos += inred('[ITEMS]\n')
+    for id,values in items.items():
+        infos += inmagenta(' '*4 + id + '\n')
+        for column, value in values.items(): # column in green
+            list = ('\n').join(textwrap.wrap("{}: {}".format(ingreen(column),value),
+                    width=termlen-8))
+            print(list)
+            infos += textwrap.indent(list,prefix = ' '*8,predicate=lambda x:True)
+            infos += "\n"
+
+
+    # page it on screen
+    pydoc.pager(infos)
 
 def _cmdline() -> argparse.Namespace:
     """Manages the command-line arguments"""
