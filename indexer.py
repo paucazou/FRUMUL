@@ -12,18 +12,6 @@ import textwrap
 from colorama import Fore, Style
 from frumul import lexer, parser, semizer, symbols, tosource
 
-# TODO DELETE
-"""
-class Fore:
-    RED='\x1b[31m'
-    GREEN='\x1b[32m'
-    MAGENTA='\x1b[36m'
-
-class Style:
-    RESET_ALL='\x1b[0m'
-# TODO DELETE
-"""
-
 inred = lambda x: Fore.RED + x + Style.RESET_ALL
 ingreen = lambda x: Fore.GREEN + x + Style.RESET_ALL
 inmagenta = lambda x: Fore.MAGENTA + x + Style.RESET_ALL
