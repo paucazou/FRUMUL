@@ -215,7 +215,7 @@ class TextParser(Parser):
         """Manages text
         CTAG (closing tag) can be EOF or another closing tag"""
         children = []
-        while self._current_token.type != CTAG.type and self._current_token.value != CTAG.value: 
+        while self._current_token.type != CTAG.type or (self._current_token.value != CTAG.value and self._current_token.type == CTAG.type): 
 
             if self._current_token.type == SENTENCE:
                 children.append(Sentence(self._current_token))
@@ -238,7 +238,7 @@ class TextParser(Parser):
         children = self._current_token.value
         self._eat(CHILDREN)
         symbol = self.constants[otag.value].children.giveChild(children) # a recursive method which return matching child
-        tag_number = symbol.tag
+        tag_number = symbol.tag # TODO raise error if no tag is set
         ctag = otag._replace(type='TAG')
 
         text = []
