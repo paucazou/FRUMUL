@@ -75,7 +75,7 @@ def main():
     newfile = parser.add_argument_group('New file','Create a new Frumul file')
     newfile.add_argument('--new-file',type=argparse.FileType('w'),default=sys.stdout,
             help="Create a new FRUMUL file with given path. Use it with header")
-    newfile.add_argument('--header',action='append',nargs=2,
+    newfile.add_argument('--header',default=[],action='append',nargs=2,
             help="Header + opening tag in new file\nUse a path for your own header, a name for standard header\nExample: --header json jj")
 
     args = parser.parse_args()
