@@ -141,7 +141,11 @@ def _files(args: argparse.Namespace):
     """Manage the files inside a project"""
     project = _loadProject(args.PROJECT)
     files = project.children['___files']
-    if args.add: # TODO ne sauvegarder que le chemin relatif vers le fichier depuis le projet. # use relpath
+    curdir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    if args.add: 
+        if not os.path.isfile(args.add):
+            raise NameError("'{}' is not a file".format(args.add))
+        args.add = os.path.relpath(args.add,curdir)
         if not files.hasChildren():
             files.children = symbols.ChildrenSymbols()
         if args.add not in files.children:
@@ -149,7 +153,8 @@ def _files(args: argparse.Namespace):
             print("'{}' registered in project '{}'".format(args.add,args.PROJECT))
         else:
             raise NameError("'{}' already saved inside files".format(args.add))
-    elif args.remove: # TODO idem que là haut
+    elif args.remove: 
+        args.remove = os.path.relpath(args.remove,curdir)
         if not getattr(files,'children',False) or args.remove not in files.children:
             raise NameError("'{}' can't be found.".format(args.remove))
         else:
@@ -210,7 +215,7 @@ def _items(args: argparse.Namespace):
 
     _saveProject(args.PROJECT,project)
 
-def _print(args: argparse.Namespace): # TODO add color
+def _print(args: argparse.Namespace): 
     """A representation of a project"""
     termlen = shutil.get_terminal_size().columns
     sep = '='*termlen + '\n'
@@ -221,7 +226,7 @@ def _print(args: argparse.Namespace): # TODO add color
     ##files
     files_column = project.children['___files']
     if files_column.hasChildren():
-        files = [file for file in files_column.children]
+        files = [file.name.long for file in files_column.children]
     else:
         files = []
     ## items
@@ -238,7 +243,7 @@ def _print(args: argparse.Namespace): # TODO add color
 
     # infos creations
     infos = inred(title) + sep
-    infos += inred('[FILES]\n') + '\n'.join(files) + sep
+    infos += inred('[FILES]\n') + '\n'.join(files) + '\n' + sep
     infos += inred('[ITEMS]\n')
     for id,values in items.items():
         infos += inmagenta(' '*4 + id + '\n')
