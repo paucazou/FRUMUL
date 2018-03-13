@@ -100,8 +100,8 @@ class Symbol:
                 self._tag_nb = self.parent.tag
             if self.hasValue() and not self._tag_nb:
                 raise ValueError("No parent have been set for this Symbol, or no tag number has been declared: {}".format(self.name)) # risque qu'il n'y ait pas de name...
-            else:
-                self._tag_nb = None
+            #else:
+            #    self._tag_nb = None
         return self._tag_nb
 
     tag = property(_get_tag)
