@@ -191,7 +191,7 @@ def _items(args: argparse.Namespace):
         raise ValueError("No option entered")
 
     project = _loadProject(args.PROJECT)
-    columns = [project] + [child for child in project.children if checkName(child.name.long)]
+    columns = [project] + sorted([child for child in project.children if checkName(child.name.long)],key=lambda x:x.name.long)
     
     result = None
     exit_value = "_"*3 + "exit" + "_"*3
@@ -250,7 +250,7 @@ def _print(args: argparse.Namespace):
         for column, value in values.items(): # column in green
             list = ('\n').join(textwrap.wrap("{}: {}".format(ingreen(column),value),
                     width=termlen-8))
-            print(list)
+            #print(list)
             infos += textwrap.indent(list,prefix = ' '*8,predicate=lambda x:True)
             infos += "\n"
 
