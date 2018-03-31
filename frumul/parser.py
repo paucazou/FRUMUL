@@ -215,6 +215,7 @@ class TextParser(Parser):
         """Manages text
         CTAG (closing tag) can be EOF or another closing tag"""
         children = []
+        # BUG TODO cette boucle devient infinie si on arrive à la fin du fichier. Il faut donc renvoyer une erreur en cas d'EOF (attention, eof peut être aussi attendu. à vérifier donc)
         while self._current_token.type != CTAG.type or (self._current_token.value != CTAG.value and self._current_token.type == CTAG.type): 
 
             if self._current_token.type == SENTENCE:
@@ -226,6 +227,10 @@ class TextParser(Parser):
 
             if self._current_token.type == TAG and self._current_token.value != CTAG.value: 
                 children.append(self._tag())
+
+            # TODO this can lead to problems. Check before be sure to implement it
+            if self._current_token.type == eof_token.type and CTAG != eof_token:
+                raise TypeError("File has end before finding: '{}'".format(CTAG))
 
         self._eat(CTAG.type)
 
